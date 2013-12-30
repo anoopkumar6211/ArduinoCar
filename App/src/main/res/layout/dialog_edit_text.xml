@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:id="@+id/edit_text_dialog"
+            android:layout_gravity="center"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"/>
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="negative"
+                android:id="@+id/btn_positive_dialog"
+                android:layout_gravity="left|center_vertical"/>
+
+        <Button
+                android:layout_width="match_parent"
+                android:layout_height="fill_parent"
+                android:text="positive"
+                android:id="@+id/btn_negative_dialog"
+                android:layout_weight="1"
+                />
+    </LinearLayout>
+
+</LinearLayout>
