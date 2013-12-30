@@ -31,7 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-
+// GitHub Chceck
 public class ArduinoCarFragment extends Fragment implements View.OnTouchListener {
 
     private final String TAG = ArduinoCarFragment.class.getSimpleName();
