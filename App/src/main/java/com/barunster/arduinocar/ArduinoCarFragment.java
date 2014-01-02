@@ -54,7 +54,7 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
     // Views
     private View mainView;
     private ImageView btnStickL, btnStickR;
-    private TextView txtPosL, txtPosR, txtSpeed, txtPoints;
+    private TextView  txtSpeedR, txtSpeedL, txtPoints;
     private Button btnToggleConnection;
 
     private float  screenWidth, startingY, point;
@@ -99,10 +99,9 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
         mainView = inflater.inflate(R.layout.activity_stick, null);
 
         // Initialize Views
-        txtPosL = (TextView) mainView.findViewById(R.id.txt_pos_l);
-        txtPosR = (TextView) mainView.findViewById(R.id.txt_pos_r);
         txtPoints = (TextView) mainView.findViewById(R.id.txt_points);
-        txtSpeed = (TextView) mainView.findViewById(R.id.txt_speed);
+        txtSpeedR = (TextView) mainView.findViewById(R.id.txt_r_speed);
+        txtSpeedL = (TextView) mainView.findViewById(R.id.txt_l_speed);
 
         btnToggleConnection = (Button) mainView.findViewById(R.id.btn_toggle_connection);
         btnStickL = (ImageView) mainView.findViewById(R.id.btn_stick_left);
@@ -364,25 +363,27 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
                 if (view.getId() == R.id.btn_stick_right)
                 {
                     btnStickR.setY(startingY);
-                    txtPosR.setText( String.valueOf(Math.round(screenWidth / 2)) );
+                    txtSpeedR.setText("0");
                 }
                 else
                 {
                     btnStickL.setY(startingY);
-                    txtPosL.setText( String.valueOf(Math.round(screenWidth / 2)) );
+                    txtSpeedL.setText("0");
                 }
 
                 writeToArduino( String.valueOf(ConnectedThread.COMM_STOP) + motor );
-                txtSpeed.setText("0");
 
                 break;
         }
 
-        txtSpeed.setText(getSpeed( (int) motionEvent.getRawY() ));
-
         if ( !motor.equals("") && !direction.equals("") && ( ((int) motionEvent.getRawY()) - (stickSize/2) ) % 2 == 0)
         {
             writeToArduino(motor + direction + getSpeed((int) motionEvent.getRawY()));
+
+            if (motor.equals("R"))
+                txtSpeedR.setText(getSpeed( (int) motionEvent.getRawY() ));
+            else
+                txtSpeedL.setText(getSpeed( (int) motionEvent.getRawY() ));
         }
 
         return true;
@@ -390,7 +391,7 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
 
     void writeToArduino(final String text){
 
-        // Check to see if the apllication is connected via bluetooth
+        // Check to see if the application is connected via bluetooth
         if ( connectedThread != null && connectedThread.isConnected() )
         {
             new Thread(){

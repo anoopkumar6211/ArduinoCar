@@ -24,33 +24,31 @@
             android:layout_alignParentRight="true"
             android:layout_marginRight="100dp"/>
 
-    <TextView
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_centerHorizontal="true">
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="0"
-            android:id="@+id/txt_pos_l"
-            android:layout_centerVertical="true"
-            android:layout_alignParentLeft="true"/>
+            android:layout_weight="1"
+            android:id="@+id/txt_l_speed"
+            android:layout_marginRight="20dp"/>
 
-    <TextView
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="0"
-            android:id="@+id/txt_pos_r"
-            android:layout_centerVertical="true"
-            android:layout_alignParentRight="true"/>
+            android:layout_weight="1"
+            android:id="@+id/txt_r_speed"/>
 
-    <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="Speed"
-            android:id="@+id/txt_speed"
-            android:layout_marginTop="19dp"
-            android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"/>
+        </LinearLayout>
+
 
     <Button
             android:layout_width="wrap_content"
@@ -65,8 +63,7 @@
             android:layout_height="wrap_content"
             android:text="points"
             android:id="@+id/txt_points"
-            android:layout_alignBaseline="@+id/txt_speed"
-            android:layout_alignBottom="@+id/txt_speed"
-            android:layout_toLeftOf="@+id/txt_pos_r"/>
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 
 </RelativeLayout>

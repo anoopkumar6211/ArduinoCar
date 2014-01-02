@@ -33,7 +33,7 @@ public class MainActivity extends Activity {
         if (savedInstanceState == null) {
             ArduinoCarFragment arduinoCarFragment = new ArduinoCarFragment();
             Bundle extras = new Bundle();
-            extras.putFloat(ArduinoCarFragment.PREFS_SPEED_POINTS, Measuredwidth);
+            extras.putFloat(ArduinoCarFragment.SCREEN_WIDTH, Measuredwidth);
             arduinoCarFragment.setArguments(extras);
             getFragmentManager().beginTransaction()
                     .replace(R.id.container, arduinoCarFragment)
