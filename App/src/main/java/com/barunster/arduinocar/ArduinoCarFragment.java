@@ -36,7 +36,8 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
 
     private final String TAG = ArduinoCarFragment.class.getSimpleName();
 
-    public static final String PREFS_SPEED_POINTS = "SpeedPoints";
+    public static final String PREFS_SPEED_POINTS = "speed_points";
+    public static final String SCREEN_WIDTH = "screen_width";
     public static final String CONNECTED = "connected";
     public static final String DISCONNECTED = "disconnected";
 
@@ -78,13 +79,17 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
         super.onCreate(savedInstanceState);
 
         // Get Window Size
-        if (extras != null)
-            screenWidth = extras.getInt(PREFS_SPEED_POINTS);
+        if (savedInstanceState != null)
+            screenWidth = savedInstanceState.getFloat(SCREEN_WIDTH);
+        else if (extras != null)
+            screenWidth = extras.getFloat(SCREEN_WIDTH);
+
         else Toast.makeText(getActivity(), "No screen width", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
+        outState.putFloat(SCREEN_WIDTH, screenWidth);
         super.onSaveInstanceState(outState);
     }
 

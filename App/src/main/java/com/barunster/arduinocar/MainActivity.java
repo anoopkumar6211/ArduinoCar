@@ -7,6 +7,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -18,8 +19,9 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
+    private final String TAG = this.getClass().getSimpleName();
+
     private int Measuredwidth;
-    private int Measuredheight;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,10 +31,9 @@ public class MainActivity extends Activity {
         getDisplaySize();
 
         if (savedInstanceState == null) {
-
             ArduinoCarFragment arduinoCarFragment = new ArduinoCarFragment();
             Bundle extras = new Bundle();
-            extras.putInt(ArduinoCarFragment.PREFS_SPEED_POINTS, Measuredheight);
+            extras.putFloat(ArduinoCarFragment.PREFS_SPEED_POINTS, Measuredwidth);
             arduinoCarFragment.setArguments(extras);
             getFragmentManager().beginTransaction()
                     .replace(R.id.container, arduinoCarFragment)
@@ -69,10 +70,9 @@ public class MainActivity extends Activity {
         w.getDefaultDisplay().getSize(size);
 
         /* Screen X and Y */
-        Measuredwidth = size.x;
-        Measuredheight = size.y;
+        Measuredwidth = size.y;
 
-//	        Log.d(TAG, " Width - " + Measuredwidth + " | Height - " + Measuredheight);
+	    Log.d(TAG, " Width - " + Measuredwidth );
     }
 
     /**
