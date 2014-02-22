@@ -21,30 +21,15 @@ public class SimpleListAdapter extends BaseAdapter {
 
     Activity mActivity;
 
-    List<String> listData;
+    List<String> listData = new ArrayList<String>();
 
     //View
     View row;
 
     TextView textView;
 
-    public SimpleListAdapter(Activity activity, List<String> data){
-        mActivity = activity;
-        listData = data;
-    }
-
-    public SimpleListAdapter(Activity activity, String[] data){
-        mActivity = activity;
-
-        listData = Arrays.asList(data);
-
-    }
-
     public SimpleListAdapter(Activity activity){
         mActivity = activity;
-
-        listData = new ArrayList<String>();
-        listData.add("No Devices");
     }
 
     @Override

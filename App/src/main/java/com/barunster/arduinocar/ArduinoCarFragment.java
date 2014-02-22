@@ -27,10 +27,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Date;
+
+import braunster.btconnection.BTConnection;
+import braunster.btconnection.Command;
+
 // GitHub Chceck
 public class ArduinoCarFragment extends Fragment implements View.OnTouchListener {
 
@@ -38,24 +44,23 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
 
     public static final String PREFS_SPEED_POINTS = "speed_points";
     public static final String SCREEN_WIDTH = "screen_width";
-    public static final String CONNECTED = "connected";
-    public static final String DISCONNECTED = "disconnected";
+    public static final String BLUETOOTH_DEVICE_NAME = "bluetooth_device_name";
 
     // Bluetooth connection related
-    private ConnectAsClientThread connectAsClientThread;
     private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     private BluetoothDevice bluetoothDevice;
     private ArrayList<BluetoothDevice> bluetoothDevices;
     private SimpleListAdapter simpleListAdapter;
     private boolean isScanning = false;
     private Dialog connectToDeviceDialog;
-    private Handler handler;
+    private BTConnection connection = new BTConnection();
 
     // Views
     private View mainView;
     private ImageView btnStickL, btnStickR;
     private TextView  txtSpeedR, txtSpeedL, txtPoints;
     private Button btnToggleConnection;
+    private ProgressBar progressBar;
 
     private float  screenWidth, startingY, point;
     private int stickSize, speedPoints;
@@ -65,8 +70,6 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
 
     // Extras
     private Bundle extras;
-
-    private ConnectedThread connectedThread;
 
     @Override
     public void setArguments(Bundle args) {
@@ -104,6 +107,7 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
         txtSpeedL = (TextView) mainView.findViewById(R.id.txt_l_speed);
 
         btnToggleConnection = (Button) mainView.findViewById(R.id.btn_toggle_connection);
+        progressBar = (ProgressBar) mainView.findViewById(R.id.progressBar);
         btnStickL = (ImageView) mainView.findViewById(R.id.btn_stick_left);
         btnStickR = (ImageView) mainView.findViewById(R.id.btn_stick_right);
 
@@ -111,6 +115,16 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
         btnStickR.setOnTouchListener(this);
 
         setToDisconnected();
+
+
+        connection.setContext(getActivity())
+        ;//        connection.openScanAndConnectDialog(new BTConnection.DialogResultListener() {
+//            @Override
+//            public void onResult(String s) {
+//                Log.i(TAG, "Result: " + s);
+//            }
+//        });
+
 
         // Get the value the user already insert in his last session
         speedPoints = PreferenceManager.getDefaultSharedPreferences(getActivity()).getInt(PREFS_SPEED_POINTS, 0) ;
@@ -130,36 +144,6 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
             // TODO handle no points.
         }
 
-
-        handler = new Handler(){
-
-            @Override
-            public void handleMessage(Message msg) {
-
-                switch (msg.what)
-                {
-                    case 1:
-                        Toast.makeText(getActivity(), "Connected!", Toast.LENGTH_SHORT).show();
-
-                        if (connectedThread != null)
-                            connectedThread.cancel();
-
-                        connectedThread = new ConnectedThread(((BluetoothSocket)msg.obj));
-                        connectedThread.start();
-
-                        setToConnected();
-
-                        break;
-
-                    case 2:
-                        Toast.makeText(getActivity(), "Unable to connect to : " + ((BluetoothDevice)msg.obj).getName(), Toast.LENGTH_SHORT).show();
-
-                        setToDisconnected();
-                        break;
-                }
-            }
-        };
-
         return mainView;
     }
 
@@ -167,9 +151,7 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
     public void onPause() {
         getActivity().unregisterReceiver(connectivityChangesReceiver);
 
-        if (connectedThread != null && connectedThread.isConnected())
-            connectedThread.cancel();
-
+        connection.close();
 
         super.onPause();
     }
@@ -181,15 +163,16 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
             @Override
             public void onClick(View v) {
 
-                if (btnToggleConnection.getTag().equals(CONNECTED))
+                if (btnToggleConnection.getTag().equals(BTConnection.CONNECTED))
                 {
-                    // Disconnect
-                    if (connectedThread != null && connectedThread.isConnected())
-                        connectedThread.cancel();
+                    // Disconnect/**/
+                    connection.close();
 
                     setToDisconnected();
 
                     bluetoothDevice = null;
+
+                    progressBar.setVisibility(View.INVISIBLE);
 
                     Toast.makeText(getActivity(), "Disconnected", Toast.LENGTH_SHORT).show();
                 }
@@ -199,52 +182,56 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
                         Toast.makeText(getActivity(), "Please enable bluetooth", Toast.LENGTH_SHORT).show();
                     else
                     {
-                        Toast.makeText(getActivity(), "Scanning for devices...", Toast.LENGTH_SHORT).show();
+                        if (PreferenceManager.getDefaultSharedPreferences(getActivity()).contains(BLUETOOTH_DEVICE_NAME))
+                        {
+                            ConnectToDevice(PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(BLUETOOTH_DEVICE_NAME, ""));
+                        }
+                        else
+                        {
+                            connectToDeviceDialog = new Dialog(getActivity());
 
-                        connectToDeviceDialog = new Dialog(getActivity());
+                            connectToDeviceDialog.setContentView(R.layout.dialog_devices_list);
+                            connectToDeviceDialog.setTitle("Device List:");
 
-                        connectToDeviceDialog.setContentView(R.layout.dialog_devices_list);
-                        connectToDeviceDialog.setTitle("Device List:");
-
-                        connectToDeviceDialog.findViewById(R.id.btn_cancel).setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                connectToDeviceDialog.dismiss();
-
-                                if (bluetoothAdapter.isDiscovering())
-                                    bluetoothAdapter.cancelDiscovery();
-                            }
-                        });
-
-                        connectToDeviceDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                            @Override
-                            public void onDismiss(DialogInterface dialog) {
-                                isScanning = false;
-                            }
-                        });
-
-                        ((ListView)connectToDeviceDialog.findViewById(R.id.list_devices)).setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                            @Override
-                            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                                if (bluetoothDevices != null)
-                                {
-                                    bluetoothDevice = bluetoothDevices.get(position);
-                                    connectAsClientThread = new ConnectAsClientThread(bluetoothDevices.get(position));
-                                    connectAsClientThread.setHandler(handler);
-                                    connectAsClientThread.start();
-
-                                    Toast.makeText(getActivity(), "Connecting...", Toast.LENGTH_SHORT).show();
-
+                            connectToDeviceDialog.findViewById(R.id.btn_cancel).setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
                                     connectToDeviceDialog.dismiss();
+
+                                    if (bluetoothAdapter.isDiscovering())
+                                        bluetoothAdapter.cancelDiscovery();
                                 }
-                            }
-                        });
+                            });
 
-                        connectToDeviceDialog.show();
+                            connectToDeviceDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                @Override
+                                public void onDismiss(DialogInterface dialog) {
+                                    isScanning = false;
+                                }
+                            });
 
-                        bluetoothAdapter.startDiscovery();
+                            ((ListView)connectToDeviceDialog.findViewById(R.id.list_devices)).setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                @Override
+                                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                                    if (bluetoothDevices != null)                                    {
+                                        bluetoothDevice = bluetoothDevices.get(position);
 
-                        isScanning = true;
+                                        PreferenceManager.getDefaultSharedPreferences(getActivity()).edit().putString(BLUETOOTH_DEVICE_NAME, bluetoothDevice.getName()).commit();
+
+                                        ConnectToDevice(bluetoothDevice.getName());
+
+                                        connectToDeviceDialog.dismiss();
+                                    }
+                                }
+                            });
+
+                            connectToDeviceDialog.show();
+
+                            bluetoothAdapter.startDiscovery();
+
+                            isScanning = true;
+                        }
+
                     }
                 }
 
@@ -317,7 +304,10 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
         filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
 
         // Reconnect to device
-        ConnectToDevice();
+        if (bluetoothDevice != null)
+            ConnectToDevice(bluetoothDevice.getName());
+        else if (PreferenceManager.getDefaultSharedPreferences(getActivity()).contains(BLUETOOTH_DEVICE_NAME))
+            ConnectToDevice(PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(BLUETOOTH_DEVICE_NAME, ""));
 
         getActivity().registerReceiver(connectivityChangesReceiver, filter);
         super.onResume();
@@ -371,7 +361,7 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
                     txtSpeedL.setText("0");
                 }
 
-                writeToArduino( String.valueOf(ConnectedThread.COMM_STOP) + motor );
+                writeToArduino( String.valueOf(Command.STOP) + motor );
 
                 break;
         }
@@ -392,14 +382,9 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
     void writeToArduino(final String text){
 
         // Check to see if the application is connected via bluetooth
-        if ( connectedThread != null && connectedThread.isConnected() )
+        if ( connection.isConnected())
         {
-            new Thread(){
-                @Override
-                public void run() {
-                    connectedThread.write("{" + text + "}");
-                }
-            }.start();
+            connection.write(text);
         }
 
 
@@ -424,16 +409,54 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
 
     }
 
-    private boolean ConnectToDevice(){
-        if (bluetoothDevice!= null)
-        {
-            connectAsClientThread = new ConnectAsClientThread(bluetoothDevice);
-            connectAsClientThread.setHandler(handler);
-            connectAsClientThread.start();
+    private void ConnectToDevice(String deviceName){
 
-            return true;
-        }
-        else return false;
+        Toast.makeText(getActivity(), "Connecting...Device Name: " + deviceName, Toast.LENGTH_SHORT).show();
+        progressBar.setVisibility(View.VISIBLE);
+
+        connection.setConnectionStateChangeListener(new BTConnection.ConnectionStateChangeListener() {
+            @Override
+            public void onConnected(int connectionType, Object tag) {
+                progressBar.setVisibility(View.INVISIBLE);
+                Toast.makeText(getActivity(), "Connected!." , Toast.LENGTH_LONG).show();
+                setToConnected();
+            }
+
+            @Override
+            public void onConnectionChangeState(int connectionType, String state) {
+
+            }
+
+            @Override
+            public void onConnectionFailed(String issue, Object obj) {
+                progressBar.setVisibility(View.INVISIBLE);
+                setToDisconnected();
+                Toast.makeText(getActivity(), "Connection Failed, Issue: " + issue , Toast.LENGTH_LONG).show();
+            }
+        });
+
+        connection.setOnConnectionLost(new BTConnection.onConnectionLostListener() {
+            @Override
+            public void onConnectionLost(int i, String issue) {
+                Log.d(TAG, "OnConnectionLost, Issue: " + issue);
+
+                setToDisconnected();
+
+                Toast.makeText(getActivity(), "Connection is lost, Issue: " + issue , Toast.LENGTH_LONG).show();
+            }
+        });
+
+        connection.start(deviceName);
+
+//        if (bluetoothDevice!= null)
+//        {
+//            connectAsClientThread = new ConnectAsClientThread(bluetoothDevice);
+//            connectAsClientThread.setHandler(handler);
+//            connectAsClientThread.start();
+//
+//            return true;
+//        }
+//        else return false;
     }
 
     /* Connectivity Changes Receiver */
@@ -459,10 +482,11 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
                         // Show list
                         connectToDeviceDialog.findViewById(R.id.list_devices).setVisibility(View.VISIBLE);
 
-                        simpleListAdapter = new SimpleListAdapter(getActivity(), new String[] {device.getName()});
+                        simpleListAdapter = new SimpleListAdapter(getActivity());
                         ((ListView) connectToDeviceDialog.findViewById(R.id.list_devices)).setAdapter(simpleListAdapter);
                     }
-                    else simpleListAdapter.addRow(device.getName());
+
+                    simpleListAdapter.addRow(device.getName());
 
                     Log.i(TAG, "Scanning Found Device Found Bluetooth Device, Name: " + (device.getName()));
                 }
@@ -487,35 +511,19 @@ public class ArduinoCarFragment extends Fragment implements View.OnTouchListener
                     {
                         connectToDeviceDialog.dismiss();
                         Toast.makeText(getActivity(), "Scanning finished and no device found", Toast.LENGTH_SHORT).show();
-                        //gggg
                     }
-                }
-            }
-            else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action))
-            {
-                Log.d(TAG, "Disconnected");
-
-                setToDisconnected();
-
-                if (ConnectToDevice())
-                {
-                    Toast.makeText(getActivity(), "Connection Lost, Reconnecting...", Toast.LENGTH_SHORT).show();
-                }
-                else
-                {
-                    Toast.makeText(getActivity(), "Connection Lost...", Toast.LENGTH_SHORT).show();
                 }
             }
         }
     };
 
     private void setToConnected(){
-        btnToggleConnection.setTag(CONNECTED);
+        btnToggleConnection.setTag(BTConnection.CONNECTED);
         btnToggleConnection.setText("Disconnect");
     }
 
     private void setToDisconnected(){
-        btnToggleConnection.setTag(DISCONNECTED);
+        btnToggleConnection.setTag(BTConnection.DISCONNECTED);
         btnToggleConnection.setText("Connect");
     }
 }
