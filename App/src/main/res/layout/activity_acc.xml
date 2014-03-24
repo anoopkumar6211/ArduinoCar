@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Message: "
+            android:id="@+id/txt_message_header"
+            android:layout_below="@+id/btn_acc_nav"
+            android:layout_alignLeft="@+id/btn_acc_nav"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ardiuno message"
+            android:id="@+id/txt_message_recived"
+            android:layout_below="@+id/btn_acc_nav"
+            android:layout_toRightOf="@+id/txt_message_header"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="X:"
+            android:id="@+id/x_header"
+            android:layout_below="@+id/txt_message_recived"
+            android:layout_alignLeft="@+id/btn_acc_nav"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="X data"
+            android:id="@+id/txt_x_data"
+            android:layout_alignTop="@+id/x_header"
+            android:layout_toRightOf="@+id/x_header"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Y:"
+            android:id="@+id/y_header"
+            android:layout_below="@+id/txt_x_data"
+            android:layout_alignLeft="@+id/btn_acc_nav"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Y data"
+            android:id="@+id/txt_y_data"
+            android:layout_below="@+id/txt_x_data"
+            android:layout_alignLeft="@+id/txt_x_data"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Z:"
+            android:id="@+id/z_header"
+            android:layout_below="@+id/txt_y_data"
+            android:layout_alignLeft="@+id/btn_acc_nav"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Z data"
+            android:id="@+id/txt_z_data"
+            android:layout_below="@+id/txt_y_data"
+            android:layout_alignRight="@+id/txt_y_data"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/btn_acc_nav"
+        android:text="@string/on_off"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="117dp" />
+
+    <RelativeLayout
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:id="@+id/relative_directions"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Up"
+            android:id="@+id/txt_up"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Down"
+            android:id="@+id/txt_down"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Right"
+            android:id="@+id/txt_right"
+            android:layout_centerVertical="true"
+            android:layout_alignParentRight="true"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Left"
+            android:id="@+id/txt_left"
+            android:layout_alignTop="@+id/txt_right"
+            android:layout_alignParentLeft="true" />
+    </RelativeLayout>
+
+
+</RelativeLayout>

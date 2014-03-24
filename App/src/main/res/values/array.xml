@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="motor_channels" >
+        <item>@string/channel_a</item>
+        <item>@string/channel_b</item>
+    </string-array>
+
+    <!-- Controllers -->
+    <string-array name="controllers_types" >
+        <item>@string/servo</item>
+        <item>@string/motor</item>
+        <item>@string/stick_car</item>
+        <item>@string/multiple</item>
+        <item>@string/custom_controller</item>
+        <item>@string/accelerometer</item>
+    </string-array>
+
+</resources>

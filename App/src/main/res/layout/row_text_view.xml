@@ -11,5 +11,6 @@
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Large Text"
         android:id="@+id/txt_simple_row"
-        android:gravity="center"/>
+        android:gravity="center"
+        android:padding="10dp"/>
 </LinearLayout>

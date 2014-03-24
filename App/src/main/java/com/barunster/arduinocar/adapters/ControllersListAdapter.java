@@ -1,15 +1,18 @@
-package com.barunster.arduinocar;
+package com.barunster.arduinocar.adapters;
 
 import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import com.barunster.arduinocar.R;
+import com.barunster.arduinocar.custom_controllers_obj.CustomController;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -17,19 +20,26 @@ import java.util.List;
  */
 
 
-public class SimpleListAdapter extends BaseAdapter {
+public class ControllersListAdapter extends BaseAdapter {
 
-    Activity mActivity;
+    private static final String TAG = ControllersListAdapter.class.getSimpleName();
 
-    List<String> listData = new ArrayList<String>();
+    private Activity mActivity;
+
+    private List<CustomController> listData = new ArrayList<CustomController>();
 
     //View
-    View row;
+    private View row;
 
-    TextView textView;
+    private TextView textView;
 
-    public SimpleListAdapter(Activity activity){
+    public ControllersListAdapter(Activity activity){
         mActivity = activity;
+    }
+
+    public ControllersListAdapter(Activity activity, List<CustomController> listData){
+        mActivity = activity;
+        this.listData = listData;
     }
 
     @Override
@@ -38,7 +48,7 @@ public class SimpleListAdapter extends BaseAdapter {
     }
 
     @Override
-    public Object getItem(int i) {
+    public CustomController getItem(int i) {
         return listData.get(i);
     }
 
@@ -61,14 +71,8 @@ public class SimpleListAdapter extends BaseAdapter {
 
         textView = (TextView) row.findViewById(R.id.txt_simple_row);
 
-        textView.setText(listData.get(position));
+        textView.setText(listData.get(position).getName());
 
         return row;
-    }
-
-    public void addRow(String data){
-        listData.add(data);
-
-        notifyDataSetChanged();
     }
 }

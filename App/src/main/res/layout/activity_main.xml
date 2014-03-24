@@ -1,7 +1,52 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/container"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.barunster.arduinocar.MainActivity"
-    tools:ignore="MergeRootFrame" />
+    android:orientation="vertical">
+
+<!--    <com.sothree.slidinguppanel.SlidingUpPanelLayout
+        xmlns:sothree="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/sliding_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="bottom"
+        sothree:collapsedHeight="68dp"
+        sothree:shadowHeight="4dp"
+        sothree:dragView="@+id/name">
+
+        </com.sothree.slidinguppanel.SlidingUpPanelLayout>-->
+
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/container"
+        android:tag="@string/tag_no_animation_assigned">
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:id="@+id/linear_control"
+            android:alpha="1.0">
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/disconnected"
+                android:id="@+id/btn_toggle_connection"
+                android:layout_weight="1"
+                android:tag="connection.status.disconnected"/>
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Change Fragment"
+                android:id="@+id/btn_change_frag"
+                android:layout_weight="1"/>
+
+
+            </LinearLayout>
+
+        </FrameLayout>
+    </LinearLayout>
