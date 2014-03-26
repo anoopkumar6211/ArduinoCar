@@ -211,9 +211,9 @@ public class SlideFadeMenu extends LinearLayout {
             public void onClick(View v) {
                 if (isShowing)
                 {
-                    if (slideMenuListener != null)
-                        slideMenuListener.onControllerOptionPressed();
-                    else Log.e(TAG, "No controller setting click listener");
+                   /* if (slideMenuListener != null)
+                        slideMenuListener.onControllerSelected("");
+                    else Log.e(TAG, "No controller setting click listener");*/
 
                     btnMenuVisibility.performClick();
                 }

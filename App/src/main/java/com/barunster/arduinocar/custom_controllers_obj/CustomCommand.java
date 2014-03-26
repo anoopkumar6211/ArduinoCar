@@ -18,7 +18,7 @@ public class CustomCommand {
     public static final int TYPE_ACC_CONTROL = R.string.acc_control;
 
     public static final int[] slideButtonLayoutCommandTypes = {TYPE_ON_OFF, TYPE_SPEED_CONTROL, TYPE_TOGGLE_DIRECTION};
-    public static final int[] regularButtonCommandTypes = {TYPE_ON_OFF, TYPE_TOGGLE_DIRECTION, TYPE_DIRECTION_LEFT, TYPE_DIRECTION_RIGHT, TYPE_SPEED_UP, TYPE_SPEED_DOWN/*, TYPE_ACC_CONTROL */};
+    public static final int[] regularButtonCommandTypes = {TYPE_ON_OFF, TYPE_TOGGLE_DIRECTION, TYPE_DIRECTION_LEFT, TYPE_DIRECTION_RIGHT, TYPE_SPEED_UP, TYPE_SPEED_DOWN, TYPE_ACC_CONTROL };
 
     private long id , buttonId;
     private int type;

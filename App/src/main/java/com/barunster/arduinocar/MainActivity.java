@@ -1,57 +1,42 @@
 package com.barunster.arduinocar;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.Dialog;
-import android.app.FragmentTransaction;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Point;
-import android.graphics.drawable.BitmapDrawable;
 import android.preference.PreferenceManager;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.os.Build;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import com.barunster.arduinocar.adapters.SimpleListAdapter;
-import com.barunster.arduinocar.fragments.AccFragment;
-import com.barunster.arduinocar.fragments.ArduinoCarFragment;
 import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
 import com.barunster.arduinocar.fragments.CustomControllerFragment;
-import com.barunster.arduinocar.fragments.EngineControlFragment;
-import com.barunster.arduinocar.fragments.MultiEngineControlFragment;
-import com.barunster.arduinocar.fragments.ServoControlFragment;
-import com.barunster.arduinocar.fragments.TopMenuFragment;
+import com.barunster.arduinocar.fragments.top_menu.ConnectionInfoFragment;
+import com.barunster.arduinocar.fragments.top_menu.TopMenuFragment;
 import com.barunster.arduinocar.interfaces.SlideMenuListener;
-import com.barunster.arduinocar.views.SlideFadeMenu;
 import com.barunster.arduinocar.views.SlidingUpPanelLayout;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import braunster.btconnection.BTConnection;
 
-public class MainActivity extends Activity implements SlideMenuListener {
+public class MainActivity extends FragmentActivity implements SlideMenuListener {
 
     // TODO fix animation maybe problem with smaller screens fromXdelte to Xdelta
     // TODO xml data transfer or json
@@ -59,7 +44,11 @@ public class MainActivity extends Activity implements SlideMenuListener {
 
     private final String TAG = MainActivity.class.getSimpleName();
 
+    private static final float TOP_MENU_OFFSET = 0.8f;
+    public static final float BOTTOM_MENU_OFFSET = 0.5f;
+
     public static final String BLUETOOTH_DEVICE_NAME = "bluetooth_device_name";
+
 
     // Bluetooth connection related
     private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -74,8 +63,7 @@ public class MainActivity extends Activity implements SlideMenuListener {
     private int MeasuredWidth, MeasuredHeight;
 
     /* Views*/
-    private LinearLayout linearControl;
-    private Button btnToggleConnection, btnChangeFrag, btnSetting;
+    private Button btnMenu;
     private SlidingUpPanelLayout slidingUpPanelLayoutMain, slidingUpPanelLayoutContainer;
 
     /* Popups */
@@ -89,17 +77,15 @@ public class MainActivity extends Activity implements SlideMenuListener {
     private ArduinoLegoFragment fragment;
     private TopMenuFragment topMenuFragment;
 
-    private Bundle savedInstanceState;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        this.savedInstanceState = savedInstanceState;
-
         setContentView(R.layout.activity_main_sliding_panel);
 
         app = (ArduinoCarAppObj) getApplication();
+
+        firstTimeUsingApp();
 
         fadeOut = AnimationUtils.loadAnimation(MainActivity.this, R.anim.fade_out);
         fadeIn = AnimationUtils.loadAnimation(MainActivity.this, R.anim.fade_in);
@@ -111,35 +97,37 @@ public class MainActivity extends Activity implements SlideMenuListener {
         }
         else
         {
-            this.savedInstanceState = savedInstanceState;
+            createFragment(savedInstanceState.getString(ArduinoLegoFragment.FRAGMENT_TYPE));
         }
 
-        linearControl = (LinearLayout) findViewById(R.id.linear_control);
-        linearControl.setVisibility(View.GONE);
+        btnMenu = (Button) findViewById(R.id.btn_menu);
 
-        app.setSlideFadeMenu(new SlideFadeMenu(this));
+        btnMenu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (slidingUpPanelLayoutMain != null) {
+                    slidingUpPanelLayoutMain.expandPane(TOP_MENU_OFFSET);
+                    slidingUpPanelLayoutContainer.collapsePane();
+                }
+            }
+        });
 
-        app.getSlideFadeMenu().setSlideMenuListener(this);
-
-        ((FrameLayout) findViewById(R.id.container)).addView(app.getSlideFadeMenu()); // TODO chanege
-
-        btnToggleConnection = (Button) findViewById(R.id.btn_toggle_connection);
-        btnChangeFrag = (Button) findViewById(R.id.btn_change_frag);
+//        app.setSlideFadeMenu(new SlideFadeMenu(this));
+//        app.getSlideFadeMenu().setSlideMenuListener(this);
+//        ((FrameLayout) findViewById(R.id.container)).addView(app.getSlideFadeMenu()); // TODO chanege
 
         initSlidingUpPanel();
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        initControlLinear();
-
         // Reconnect to device
-        if (bluetoothDevice != null)
-            ConnectToDevice(bluetoothDevice.getName());
-        else if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).contains(BLUETOOTH_DEVICE_NAME))
-            ConnectToDevice(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getString(BLUETOOTH_DEVICE_NAME, ""));
+        if(ArduinoCarAppObj.prefs.getBoolean(ConnectionInfoFragment.PREFS_AUTO_CONNECT, true))
+            if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).contains(MainActivity.BLUETOOTH_DEVICE_NAME) && !app.getConnection().isConnected())
+                ConnectToDevice(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getString(MainActivity.BLUETOOTH_DEVICE_NAME, ""));
 
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
@@ -153,39 +141,30 @@ public class MainActivity extends Activity implements SlideMenuListener {
     protected void onPause() {
         super.onPause();
 
-        unregisterReceiver(connectivityChangesReceiver);
+        if(ArduinoCarAppObj.prefs.getBoolean(ConnectionInfoFragment.PREFS_AUTO_DISCONNECT, true))
+            app.getConnection().close();
 
-        app.getConnection().close();
+        unregisterReceiver(connectivityChangesReceiver);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putString(ArduinoLegoFragment.FRAGMENT_TYPE, fragment.getType());
+        if (fragment != null)
+            outState.putString(ArduinoLegoFragment.FRAGMENT_TYPE, fragment.getType());
 
         super.onSaveInstanceState(outState);
     }
 
     private void ConnectToDevice(String deviceName){
 
-        if (fragment == null)
-        {
-            createFragment(savedInstanceState.getString(ArduinoLegoFragment.FRAGMENT_TYPE));
-        }
+        BTConnection.getBluetoothAdapter().cancelDiscovery();
 
-        fragment.onConnecting();
-        btnToggleConnection.setText(R.string.connecting);
-        btnToggleConnection.setTag(BTConnection.CONNECTING);
-
-        Toast.makeText(this, "Connecting...Device Name: " + deviceName, Toast.LENGTH_SHORT).show();
+        Toast.makeText(MainActivity.this, "Connecting...Device Name: " + deviceName, Toast.LENGTH_SHORT).show();
 
         app.getConnection().setConnectionStateChangeListener(new BTConnection.ConnectionStateChangeListener() {
             @Override
             public void onConnected(int connectionType, Object tag) {
                 Toast.makeText(MainActivity.this, "Connected!.", Toast.LENGTH_LONG).show();
-
-                btnToggleConnection.setText(R.string.connected);
-                fragment.onConnected();
-                btnToggleConnection.setTag(BTConnection.CONNECTED);
             }
 
             @Override
@@ -195,12 +174,7 @@ public class MainActivity extends Activity implements SlideMenuListener {
 
             @Override
             public void onConnectionFailed(String issue, Object obj) {
-                fragment.onDisconnected();
                 Toast.makeText(MainActivity.this, "Connection Failed, Issue: " + issue, Toast.LENGTH_LONG).show();
-
-                btnToggleConnection.setText(R.string.disconnected);
-                fragment.onDisconnected();
-                btnToggleConnection.setTag(BTConnection.DISCONNECTED);
             }
         });
 
@@ -208,115 +182,27 @@ public class MainActivity extends Activity implements SlideMenuListener {
             @Override
             public void onConnectionLost(int i, String issue) {
                 Log.d(TAG, "OnConnectionLost, Issue: " + issue);
-
                 Toast.makeText(MainActivity.this, "Connection is lost, Issue: " + issue, Toast.LENGTH_LONG).show();
-
-                btnToggleConnection.setText(R.string.disconnected);
-                fragment.onDisconnected();
-                btnToggleConnection.setTag(BTConnection.DISCONNECTED);
             }
         });
 
         app.getConnection().start(deviceName);
     }
 
-    private void  initControlLinear(){
+    private void firstTimeUsingApp(){
+        if (ArduinoCarAppObj.prefs.getBoolean(ArduinoCarAppObj.PREFS_FIRST_TIME_USING_APP, true))
+        {
+            ArduinoCarAppObj.prefs.edit().putBoolean(ConnectionInfoFragment.PREFS_AUTO_CONNECT, true).commit();
 
-        app.getSlideFadeMenu().setOnToggleConnectionStateClicked(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (linearControl.getAlpha() != 0.0f)
-                    if (btnToggleConnection.getTag().equals(BTConnection.CONNECTED)) {
-                        // Disconnect/**/
-                        app.getConnection().close();
+            ArduinoCarAppObj.prefs.edit().putBoolean(ConnectionInfoFragment.PREFS_AUTO_DISCONNECT, true).commit();
 
-                        fragment.onDisconnected();
-
-                        bluetoothDevice = null;
-
-                        Toast.makeText(MainActivity.this, "Disconnected", Toast.LENGTH_SHORT).show();
-
-                        btnToggleConnection.setText(R.string.disconnected);
-
-                        btnToggleConnection.setTag(BTConnection.DISCONNECTED);
-                    } else if (btnToggleConnection.getTag().equals(BTConnection.DISCONNECTED)) {
-                        if (!bluetoothAdapter.isEnabled())
-                            Toast.makeText(MainActivity.this, "Please enable bluetooth", Toast.LENGTH_SHORT).show();
-                        else {
-                            if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).contains(BLUETOOTH_DEVICE_NAME)) {
-                                ConnectToDevice(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getString(BLUETOOTH_DEVICE_NAME, ""));
-                            } else {
-                                connectToDeviceDialog = new Dialog(MainActivity.this);
-
-                                connectToDeviceDialog.setContentView(R.layout.dialog_devices_list);
-                                connectToDeviceDialog.setTitle("Device List:");
-
-                                connectToDeviceDialog.findViewById(R.id.btn_cancel).setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        connectToDeviceDialog.dismiss();
-
-                                        if (bluetoothAdapter.isDiscovering())
-                                            bluetoothAdapter.cancelDiscovery();
-                                    }
-                                });
-
-                                connectToDeviceDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                    @Override
-                                    public void onDismiss(DialogInterface dialog) {
-                                        isScanning = false;
-                                    }
-                                });
-
-                                ((ListView) connectToDeviceDialog.findViewById(R.id.list_devices)).setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                                    @Override
-                                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                                        if (bluetoothDevices != null) {
-                                            bluetoothDevice = bluetoothDevices.get(position);
-
-                                            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putString(BLUETOOTH_DEVICE_NAME, bluetoothDevice.getName()).commit();
-
-                                            ConnectToDevice(bluetoothDevice.getName());
-
-                                            connectToDeviceDialog.dismiss();
-                                        }
-                                    }
-                                });
-
-                                connectToDeviceDialog.show();
-
-                                bluetoothAdapter.startDiscovery();
-
-                                isScanning = true;
-                            }
-
-                        }
-                    } else {
-
-                    }
-            }
-        });
-
-        app.getSlideFadeMenu().setOnControllerSelectionClicked(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                Log.d(TAG, "setOnControllerSettingsClicked");
-
-                showPopupSelectController();
-            }
-        });
-
-        app.getSlideFadeMenu().setOnAppSettingClicked(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO Settings
-            }
-        });
-
+            ArduinoCarAppObj.prefs.edit().putBoolean(ArduinoCarAppObj.PREFS_FIRST_TIME_USING_APP, false).commit();
+        }
     }
 
     private void initSlidingUpPanel(){
+
+        /* Top Panel*/
         slidingUpPanelLayoutMain = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout_main);
         slidingUpPanelLayoutMain.setShadowDrawable(getResources().getDrawable(R.drawable.above_shadow));
 
@@ -331,54 +217,90 @@ public class MainActivity extends Activity implements SlideMenuListener {
             public void onPanelSlide(View panel, float slideOffset) {
                 Log.i(TAG, "onPanelSlide, offset " + slideOffset);
 
+                // When menu is only slightly shown set a click listener to the frame so iw will close it when click.
+                if (slideOffset == TOP_MENU_OFFSET)
+                {
+                    findViewById(R.id.container).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            slidingUpPanelLayoutMain.collapsePane();
+                        }
+                    });
+                }
+                else if (slideOffset < TOP_MENU_OFFSET)
+                {
+                    // If not set visible set to visible. That will cause a refresh on the connection info fragment.
+                    if (!topMenuFragment.getUserVisibleHint())
+                        topMenuFragment.setUserVisibleHint(true);
+                }
+                // When closed full eliminating the listener and enabling the slide.
+                else if ( slideOffset == 1.0f)
+                {
+                    findViewById(R.id.container).setOnClickListener(null);
+                    topMenuFragment.setUserVisibleHint(false);
+                }
             }
 
             @Override
             public void onPanelExpanded(View panel) {
                 Log.i(TAG, "onPanelExpanded");
+                slidingUpPanelLayoutMain.setSlidingEnabled(false);
 
-
+                // Closing the bottom menu.
+                slidingUpPanelLayoutContainer.collapsePane();
             }
 
             @Override
             public void onPanelCollapsed(View panel) {
                 Log.i(TAG, "onPanelCollapsed");
-
+                slidingUpPanelLayoutMain.setSlidingEnabled(true);
             }
 
             @Override
             public void onPanelAnchored(View panel) {
                 Log.i(TAG, "onPanelAnchored");
-
             }
         });
 
+
+        /* Bottom Panel*/
         slidingUpPanelLayoutContainer = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout_container);
 //        slidingUpPanelLayoutContainer.setShadowDrawable(getResources().getDrawable(R.drawable.above_shadow));
 
-        createSlidePanelFragment();
         slidingUpPanelLayoutContainer.setEnableDragViewTouchEvents(true);
 
-
-//        slidingUpPanelLayout.setPanelHeight(200);
         slidingUpPanelLayoutContainer.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
             @Override
             public void onPanelSlide(View panel, float slideOffset) {
                 Log.i(TAG, "onPanelSlide,, Container, offset " + slideOffset);
 
+                // When menu is only slightly shown set a click listener to the frame so iw will close it when click.
+                if (slideOffset == BOTTOM_MENU_OFFSET)
+                {
+                    slidingUpPanelLayoutContainer.setSlidingEnabled(false);
+
+                    findViewById(R.id.container).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            slidingUpPanelLayoutContainer.collapsePane();
+                        }
+                    });
+                }
+                // When closed full eliminating the listener and enabling the slide.
+                else if ( slideOffset == 1.0f)
+                {
+                    findViewById(R.id.container).setOnClickListener(null);
+                }
             }
 
             @Override
             public void onPanelExpanded(View panel) {
                 Log.i(TAG, "onPanelExpanded, Container");
-
-
             }
 
             @Override
             public void onPanelCollapsed(View panel) {
                 Log.i(TAG, "onPanelCollapsed, Container");
-
             }
 
             @Override
@@ -388,139 +310,14 @@ public class MainActivity extends Activity implements SlideMenuListener {
             }
         });
     }
-    private void animateControlLinear(){
-        Log.d(TAG, "animate control, Alpha = " + linearControl.getAlpha() + " Tag = " + linearControl.getTag());
-
-        if (linearControl.getAlpha() == 1.0f && linearControl.getTag().equals(getResources().getString(R.string.tag_no_animation_assigned))) {
-            Log.d(TAG, "no animation assigned");
-            linearControl.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    Log.d(TAG, "Animation Fading Out");
-
-                    fadeOut.setAnimationListener(new Animation.AnimationListener() {
-                        @Override
-                        public void onAnimationStart(Animation animation) {
-                            Log.d(TAG, "Animation Start");
-                        }
-
-                        @Override
-                        public void onAnimationEnd(Animation animation) {
-                            Log.d(TAG, "Animation End");
-                            linearControl.setAlpha(0.0f);
-
-                            linearControl.setTag(getResources().getString(R.string.tag_no_animation_assigned));
-
-
-                        }
-
-                        @Override
-                        public void onAnimationRepeat(Animation animation) {
-
-                        }
-                    });
-
-                    linearControl.startAnimation(fadeOut);
-
-                    linearControl.setTag(getResources().getString(R.string.tag_animation_assigned));
-                }
-            }, app.getConnection().isConnected() ? 5 * 1000 : 10 * 1000);
-        } else {
-            if (linearControl.getAlpha() == 0.0f)
-            {
-                Log.d(TAG, "Animation Fading In");
-
-                fadeIn.setAnimationListener(new Animation.AnimationListener() {
-                    @Override
-                    public void onAnimationStart(Animation animation) {
-                        linearControl.setAlpha(1.0f);
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animation animation) {
-
-                        if (linearControl.getTag().equals(getResources().getString(R.string.tag_no_animation_assigned)))
-                            linearControl.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-
-                                    fadeOut.setAnimationListener(new Animation.AnimationListener() {
-                                        @Override
-                                        public void onAnimationStart(Animation animation) {
-                                            Log.d(TAG, "Animation Start");
-                                        }
-
-                                        @Override
-                                        public void onAnimationEnd(Animation animation) {
-                                            Log.d(TAG, "Animation End");
-                                            linearControl.setAlpha(0.0f);
-
-                                            linearControl.setTag(getResources().getString(R.string.tag_no_animation_assigned));
-
-
-                                        }
-
-                                        @Override
-                                        public void onAnimationRepeat(Animation animation) {
-
-                                        }
-                                    });
-
-                                    linearControl.startAnimation(fadeOut);
-
-                                    linearControl.setTag(getResources().getString(R.string.tag_animation_assigned));
-                                }
-                            }, app.getConnection().isConnected() ? 5 * 1000 : 10 * 1000);
-
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animation animation) {
-
-                    }
-                });
-
-                linearControl.startAnimation(fadeIn);
-            }
-        }
-    }
-
-    private void showPopupSelectController(){
-        if (popupSlideFadeMenu != null && popupSlideFadeMenu.isShowing())
-            popupSlideFadeMenu.dismiss();
-
-        View popupView  = getLayoutInflater().inflate(R.layout.popup_controller_selection, null);
-        SimpleListAdapter adapter = new SimpleListAdapter(MainActivity.this, Arrays.asList(getResources().getStringArray(R.array.controllers_types)), ArduinoLegoFragment.controllersTags);
-
-        ((ListView) popupView.findViewById(R.id.list_controllers)).setAdapter(adapter);
-        ((ListView) popupView.findViewById(R.id.list_controllers)).setOnItemClickListener(new ListView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d(TAG, "OnItemClicked");
-                createFragment((String) view.getTag());
-                popupSlideFadeMenu.dismiss();
-            }
-        });
-
-        popupSlideFadeMenu = new PopupWindow(MainActivity.this);
-        popupSlideFadeMenu.setFocusable(true);
-        popupSlideFadeMenu.setContentView(popupView);
-        popupSlideFadeMenu.setOutsideTouchable(true);
-        popupSlideFadeMenu.setBackgroundDrawable(new BitmapDrawable());
-        popupSlideFadeMenu.setWidth(app.getSlideFadeMenu().getWidth());
-        popupSlideFadeMenu.setHeight(popupView.getLayoutParams().WRAP_CONTENT);
-        popupSlideFadeMenu.setAnimationStyle(R.style.PopupAnimation);
-
-        popupSlideFadeMenu.showAsDropDown(app.getSlideFadeMenu());
-    }
 
     private void createFragment(String fragmentType){
 
-        ft = getFragmentManager().beginTransaction();
-        ft.setCustomAnimations(R.anim.in_left, R.anim.out_right);
+        ft = getSupportFragmentManager().beginTransaction();
+//        ft.setCustomAnimations(R.anim.in_left, R.anim.out_right);
+        // TODO animation
 
-        Log.d(TAG, "CreateFragment, Fragment Type: " + fragmentType);
+        /*Log.d(TAG, "CreateFragment, Fragment Type: " + fragmentType);
 
         if (fragmentType.equals(ArduinoLegoFragment.FRAGMENT_TYPE_SERVO))
         {
@@ -541,7 +338,9 @@ public class MainActivity extends Activity implements SlideMenuListener {
         }
         else if (fragmentType.equals(ArduinoLegoFragment.FRAGMENT_TYPE_ACCELEROMETER)){
             fragment = new AccFragment();
-        }
+        }*/
+
+        fragment = new CustomControllerFragment();
 
         Bundle extras = new Bundle();
         extras.putString(ArduinoLegoFragment.FRAGMENT_TYPE, fragmentType);
@@ -556,13 +355,14 @@ public class MainActivity extends Activity implements SlideMenuListener {
 
     private void createSlidePanelFragment(){
 
-        ft = getFragmentManager().beginTransaction();
-        ft.setCustomAnimations(R.anim.in_left, R.anim.out_right);
+        ft = getSupportFragmentManager().beginTransaction();
 
         topMenuFragment = new TopMenuFragment();
 
-        Bundle extras = new Bundle();
+        // Used later for refreshing to connection fragment when menu is open.
+        topMenuFragment.setUserVisibleHint(false);
 
+        Bundle extras = new Bundle();
 
         topMenuFragment.setArguments(extras);
 
@@ -590,49 +390,33 @@ public class MainActivity extends Activity implements SlideMenuListener {
     public void onSlideMenuOpen() {
         if (fragment != null)
             fragment.onSlideMenuOpen();
-
-//        slidingUpPanelLayoutMain.setAnchorPoint(100f);
-        slidingUpPanelLayoutMain.expandPane(0.8f);
-//        slidingUpPanelLayoutMain.setAnchorPoint(0.5f);
-//        slidingUpPanelLayoutContainer.expandPane(0.6f);
     }
 
     @Override
     public void onSlideMenuClosed() {
         if (fragment != null)
             fragment.onSlideMenuClosed();
-
-        slidingUpPanelLayoutMain.collapsePane();
-//        slidingUpPanelLayoutContainer.collapsePane();
     }
 
     @Override
-    public void onSettingsPressed() {
+    public void onSettingsChanged() {
 
     }
 
     @Override
-    public void onControllerOptionPressed() {
-        if (fragment != null)
-            fragment.onControllerOptionPressed();
+    public void onControllerSelected(long id) {
+        fragment.onControllerSelected(id);
     }
 
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
+    /* Getters & Setters */
 
-        public PlaceholderFragment() {
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            return rootView;
-        }
+    public SlidingUpPanelLayout getSlidingUpPanelLayoutMain() {
+        return slidingUpPanelLayoutMain;
     }
 
+    public SlidingUpPanelLayout getSlidingUpPanelLayoutContainer() {
+        return slidingUpPanelLayoutContainer;
+    }
 
     /* Connectivity Changes Receiver */
     BroadcastReceiver connectivityChangesReceiver = new BroadcastReceiver() {

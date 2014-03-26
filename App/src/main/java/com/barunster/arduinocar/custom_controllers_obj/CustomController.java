@@ -10,19 +10,20 @@ public class CustomController {
 
     private long id;
     private String name;
+    private int rows, columns;
     private List<CustomButton> buttons = new ArrayList<CustomButton>();
 
-    public CustomController(long id){
-        this.id = id;
+    public CustomController(String name, int rows, int columns){
+        this.name = name;
+        this.rows = rows;
+        this.columns = columns;
     }
 
-    public CustomController(long id , String name){
+    public CustomController(long id , String name, int rows, int columns){
         this.id = id;
         this.name = name;
-    }
-
-    public CustomController(String name){
-        this.name = name;
+        this.rows = rows;
+        this.columns = columns;
     }
 
     public void setName(String name) {
@@ -43,5 +44,13 @@ public class CustomController {
 
     public List<CustomButton> getButtons() {
         return buttons;
+    }
+
+    public int getRows() {
+        return rows;
+    }
+
+    public int getColumns() {
+        return columns;
     }
 }

@@ -1,9 +1,23 @@
 package com.barunster.arduinocar.custom_controllers_obj;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Created by itzik on 3/14/14.
  */
 public class CustomButton {
+
+    /* Button Tags*/
+    public static final String BUTTON_TYPE = "button_type";
+    public static final String BUTTON_ID = "button_id";
+
+    public static final int BUTTON_TYPE_SIMPLE = 9000;
+    public static final int BUTTON_TYPE_SLIDE_HORIZONTAL = 9001;
+    public static final int BUTTON_TYPE_SLIDE_VERTICAL = 9002;
+
+    public static final List<Integer> buttonTags = new ArrayList<Integer>( Arrays.asList(new Integer[]{BUTTON_TYPE_SIMPLE, BUTTON_TYPE_SLIDE_HORIZONTAL, BUTTON_TYPE_SLIDE_VERTICAL}));
 
     private long id , controllerId;
     private int type, size, orientation, position;

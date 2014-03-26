@@ -22,7 +22,6 @@
         android:id="@+id/container"
         android:tag="@string/tag_no_animation_assigned">
 
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

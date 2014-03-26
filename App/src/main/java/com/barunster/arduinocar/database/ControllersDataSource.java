@@ -26,7 +26,7 @@ public class ControllersDataSource {
 
     // Columns
     private final static String[] allColumns = {
-            DB.Column.ID, DB.Column.NAME,
+            DB.Column.ID, DB.Column.NAME, DB.Column.ROWS, DB.Column.COLUMNS
     };
 
     public ControllersDataSource(Context context){
@@ -59,6 +59,8 @@ public class ControllersDataSource {
 
         // Name and Type
         values.put(allColumns[1], customController.getName());
+        values.put(allColumns[2], customController.getRows());
+        values.put(allColumns[3], customController.getColumns());
 
         //insert to table
         id = db.insert(DB.Table.T_CUSTOM_CONTROLLERS, null, values);
@@ -128,8 +130,10 @@ public class ControllersDataSource {
     private CustomController getControllerFromCursor(Cursor cursor){
 
         CustomController customController = new CustomController(
-                cursor.getLong(cursor.getColumnIndex(DB.Column.ID)),
-                cursor.getString(cursor.getColumnIndex(allColumns[1]))
+                cursor.getLong( cursor.getColumnIndex(DB.Column.ID) ),
+                cursor.getString( cursor.getColumnIndex(allColumns[1]) ),
+                cursor.getInt( cursor.getColumnIndex(allColumns[2]) ),
+                cursor.getInt( cursor.getColumnIndex(allColumns[3]) )
         );
 
         return customController;

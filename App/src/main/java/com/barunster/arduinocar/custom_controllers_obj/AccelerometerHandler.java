@@ -1,6 +1,5 @@
 package com.barunster.arduinocar.custom_controllers_obj;
 
-import android.app.Activity;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;

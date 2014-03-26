@@ -1,16 +1,13 @@
 package com.barunster.arduinocar.fragments;
 
-import android.app.ActionBar;
 import android.content.ClipData;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.v4.widget.SlidingPaneLayout;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
@@ -25,30 +22,26 @@ import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.barunster.arduinocar.ArduinoCarAppObj;
+import com.barunster.arduinocar.MainActivity;
 import com.barunster.arduinocar.R;
 import com.barunster.arduinocar.adapters.ButtonGridSelectionAdapter;
 import com.barunster.arduinocar.adapters.ControllersListAdapter;
-import com.barunster.arduinocar.adapters.SimpleListAdapter;
 import com.barunster.arduinocar.custom_controllers_obj.AccelerometerHandler;
 import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
 import com.barunster.arduinocar.custom_controllers_obj.CustomCommand;
 import com.barunster.arduinocar.custom_controllers_obj.CustomController;
-import com.barunster.arduinocar.database.ControllersDataSource;
-import com.barunster.arduinocar.database.CustomDBManager;
+import com.barunster.arduinocar.fragments.bottom_menu.AddCustomButtonFragment;
+import com.barunster.arduinocar.fragments.bottom_menu.AddCustomCommandFragment;
 import com.barunster.arduinocar.views.DropZoneFrame;
 import com.barunster.arduinocar.views.DropZoneImage;
 import com.barunster.arduinocar.views.SimpleButton;
 import com.barunster.arduinocar.views.SlideButtonLayout;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import braunster.btconnection.Command;
@@ -62,23 +55,22 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
     private static final String TAG = CustomControllerFragment.class.getSimpleName();
 
-    public static final int GRID_COLUMN_NUMBER = 4;
+    public static final String CONTROLLER_ID  = "controller_id";
 
     /*Views*/
     private RelativeLayout mainView, reFrames;
     private SlideButtonLayout slideButton;
-    private PopupWindow popupButtonSelection;
-    private GridView gridDropZone;
-    private DropZoneImage dropZoneImage;
     private List<DropZoneFrame> highlightedZones = new ArrayList<DropZoneFrame>();
-    private Button btnEdit, btnAddController, btnLoadController;
+    private Button btnEdit;
 
-    private final int columnAmount = 4;
-    private final int rowAmount = 4;
+    private int columnAmount = 4;
+    private int rowAmount = 4;
     private int columnSpace, rowSpace, cellSize ;
 
     private ArduinoCarAppObj app;
-    private CustomController customeController;
+    private CustomController customController;
+
+    private AddCustomButtonFragment addCustomButtonFragment;
 
     private boolean editing = false;
 
@@ -86,6 +78,33 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = (ArduinoCarAppObj)getActivity().getApplication();
+
+        if (savedInstanceState == null)
+        {
+            // if no controller found generate empty frames
+            if (app.getCustomDBManager().getControllersDataSource().getAllControllers().size() == 0) {
+                customController = new CustomController("Default", 3, 3);
+                long id  = app.getCustomDBManager().getControllersDataSource().addController(customController);
+                customController = app.getCustomDBManager().getControllerById(id);
+            }
+            else
+                // inflating the first controller on the list.
+                customController = app.getCustomDBManager().getControllerById(
+                        app.getCustomDBManager().getControllersDataSource().getAllControllers().get(0).getId() );
+        }
+        else
+        {
+            // inflating the controller by id saved on the savedInstanceBundle. if no id saved open the first controller.
+            long id = savedInstanceState.getLong(CONTROLLER_ID, -1);
+            customController = app.getCustomDBManager().getControllerById( id != -1 ? id :
+                    app.getCustomDBManager().getControllersDataSource().getAllControllers().get(0).getId() ) ;
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putLong(CONTROLLER_ID, customController.getId());
     }
 
     @Override
@@ -94,23 +113,11 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
         mainView = (RelativeLayout) inflater.inflate(R.layout.fragment_custom_controller, null);
 
         btnEdit = (Button) mainView.findViewById(R.id.btn_edit);
-        btnAddController = (Button) mainView.findViewById(R.id.btn_add_controller);
-        btnLoadController = (Button) mainView.findViewById(R.id.btn_load_controler);
 
         reFrames = (RelativeLayout) mainView.findViewById(R.id.relative_frames);
         reFrames.setTag("");
 
-        // if no controller found generate empty frames
-        if (app.getCustomDBManager().getControllersDataSource().getAllControllers().size() == 0) {
-            initFrames();
-//            showAddControllerPopup();
-            customeController = new CustomController("Defualt");
-            long id  = app.getCustomDBManager().getControllersDataSource().addController(customeController);
-            customeController = app.getCustomDBManager().getControllerById(id);
-        }
-        else
-           initFramesForController(app.getCustomDBManager().getControllerById(
-                   app.getCustomDBManager().getControllersDataSource().getAllControllers().get(0).getId()) );
+        initFramesForController(customController);
 
         return mainView;
     }
@@ -122,238 +129,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
         initButtons();
     }
 
-    /* Popups*/
-    private void showPopupSelectButtons(){
-        if (popupButtonSelection != null && popupButtonSelection.isShowing())
-            popupButtonSelection.dismiss();
 
-        View popupView  = getActivity().getLayoutInflater().inflate(R.layout.popup_buttons_selection, null);
-
-        ButtonGridSelectionAdapter buttonGridSelectionAdapter = new ButtonGridSelectionAdapter(getActivity());
-        ((GridView) popupView.findViewById(R.id.grid_buttons)).setAdapter(buttonGridSelectionAdapter);
-        ((GridView) popupView.findViewById(R.id.grid_buttons)).setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View v, int position, long id) {
-
-//                Log.d(TAG, "GridItemSelected");
-                ClipData data = ClipData.newPlainText("", "");
-
-                dropZoneImage = (DropZoneImage) v;
-                dropZoneImage.setOnDrag(true);
-
-                v.startDrag(data,  // the data to be dragged
-                        ImageDragShadowBuilder.fromResource(getActivity(), (Integer) v.getTag()),  // the drag shadow builder
-                        v,      // no need to use local data
-                        0          // flags (not currently used, set to 0)
-                );
-
-                popupButtonSelection.dismiss();
-
-
-                return false;
-            }
-        });
-
-
-
-
-        popupButtonSelection = new PopupWindow(getActivity());
-        popupButtonSelection.setFocusable(true);
-        popupButtonSelection.setContentView(popupView);
-        popupButtonSelection.setOutsideTouchable(true);
-        popupButtonSelection.setBackgroundDrawable(new BitmapDrawable());
-        popupButtonSelection.setWidth((int) getScreenWidth() / 3);
-        popupButtonSelection.setHeight((int)getScreenHeight());
-        popupButtonSelection.setAnimationStyle(R.style.PopupAnimation);
-
-        popupButtonSelection.setOnDismissListener(new PopupWindow.OnDismissListener() {
-            @Override
-            public void onDismiss() {
-                /*if (dropZoneImage == null || !dropZoneImage.isOnDrag())
-                    exitEditMode();*/
-            }
-        });
-
-        popupButtonSelection.showAsDropDown(app.getSlideFadeMenu());
-
-
-    }
-
-    private void showLoadControllerPopup(){
-
-        final PopupWindow popupWindow = new PopupWindow(getActivity());
-
-        View popupView  = getActivity().getLayoutInflater().inflate(R.layout.popup_controller_selection, null);
-        final ControllersListAdapter adapter = new ControllersListAdapter(getActivity(),
-                app.getCustomDBManager().getControllersDataSource().getAllControllers());
-
-        ((ListView) popupView.findViewById(R.id.list_controllers)).setAdapter(adapter);
-        ((ListView) popupView.findViewById(R.id.list_controllers)).setOnItemClickListener(new ListView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d(TAG, "OnItemClicked");
-
-
-                initFramesForController(app.getCustomDBManager().getControllerById(adapter.getItem(position).getId()));
-
-                popupWindow.dismiss();
-            }
-        });
-
-        popupWindow.setFocusable(true);
-        popupWindow.setContentView(popupView);
-        popupWindow.setOutsideTouchable(true);
-        popupWindow.setBackgroundDrawable(new BitmapDrawable());
-        popupWindow.setWidth((int) getScreenWidth() / 3);
-        popupWindow.setHeight((int)getScreenHeight());
-        popupWindow.setAnimationStyle(R.style.PopupAnimation);
-
-        popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
-            @Override
-            public void onDismiss() {
-                /*if (dropZoneImage == null || !dropZoneImage.isOnDrag())
-                    exitEditMode();*/
-            }
-        });
-
-        popupWindow.showAsDropDown(app.getSlideFadeMenu());
-
-
-    }
-
-    private void showAddControllerPopup(){
-
-        final PopupWindow popupWindow = new PopupWindow(getActivity());
-
-        final View popupView  = getActivity().getLayoutInflater().inflate(R.layout.popup_add_controller, null);
-
-        popupView.findViewById(R.id.btn_submit).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if ( !((EditText) popupView.findViewById(R.id.et_controller_name)).getText().toString().isEmpty() )
-                {
-                    long id = app.getCustomDBManager().getControllersDataSource().addController(
-                            new CustomController(((EditText) popupView.findViewById(R.id.et_controller_name)).getText().toString()) );
-
-                    initFramesForController(app.getCustomDBManager().getControllerById(id));
-
-                    popupWindow.dismiss();
-                }
-            }
-        });
-
-        popupWindow.setFocusable(true);
-        popupWindow.setContentView(popupView);
-        popupWindow.setOutsideTouchable(true);
-        popupWindow.setBackgroundDrawable(new BitmapDrawable());
-        popupWindow.setWidth((int) getScreenWidth() / 3);
-        popupWindow.setHeight((int)getScreenHeight());
-        popupWindow.setAnimationStyle(R.style.PopupAnimation);
-
-        popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
-            @Override
-            public void onDismiss() {
-                /*if (dropZoneImage == null || !dropZoneImage.isOnDrag())
-                    exitEditMode();*/
-            }
-        });
-
-        popupWindow.showAsDropDown(app.getSlideFadeMenu());
-
-    }
-
-    private void showSetButtonCommandPopup(final View relatedButton,final int buttonType){
-
-        final PopupWindow popupWindow = new PopupWindow(getActivity());
-
-        final View popupView  = getActivity().getLayoutInflater().inflate(R.layout.popup_add_command, null);
-
-        // Channel Selection
-        TextView txtChannel;
-        for (String channel : getResources().getStringArray(R.array.motor_channels))
-        {
-            txtChannel = (TextView) getActivity().getLayoutInflater().inflate(R.layout.simple_text_view, null);
-            txtChannel.setTextSize(15f);
-            txtChannel.setText(channel);
-
-            if (popupView.findViewById(R.id.linear_channels).getTag() == null)
-                popupView.findViewById(R.id.linear_channels).setTag(txtChannel);
-
-            txtChannel.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    ((TextView) v).setTextColor(Color.WHITE);
-                    ( (TextView) popupView.findViewById(R.id.linear_channels).getTag()).setTextColor(Color.LTGRAY);
-                    popupView.findViewById(R.id.linear_channels).setTag(v);
-                }
-            });
-
-            if ( ( (TextView) popupView.findViewById(R.id.linear_channels).getTag()).getText().equals(channel))
-                txtChannel.setTextColor(Color.WHITE);
-
-            ( (LinearLayout) popupView.findViewById(R.id.linear_channels)).addView(txtChannel);
-
-        }
-
-        // Command Type Selection
-        RadioButton radioButton;
-        int list[] = new int[0];
-        switch (buttonType)
-        {
-            case ArduinoLegoFragment.BUTTON_TYPE_SIMPLE:
-               list = CustomCommand.regularButtonCommandTypes;
-                break;
-
-            case ArduinoLegoFragment.BUTTON_TYPE_SLIDE_HORIZONTAL:
-                list = CustomCommand.slideButtonLayoutCommandTypes;
-                break;
-
-            case ArduinoLegoFragment.BUTTON_TYPE_SLIDE_VERTICAL:
-                list = CustomCommand.slideButtonLayoutCommandTypes;
-                break;
-        }
-
-        for ( int id : list)
-        {
-            radioButton = new RadioButton(getActivity());
-            radioButton.setId(id);
-            radioButton.setTextSize(15f);
-            radioButton.setText(getResources().getString(id));
-            ( (RadioGroup) popupView.findViewById(R.id.radio_grp_button_type)).addView(radioButton);
-        }
-
-        ( (RadioGroup) popupView.findViewById(R.id.radio_grp_button_type)).getChildAt(0).setSelected(true);
-
-        // Submit Button
-        popupView.findViewById(R.id.btn_submit).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                int commandType = ( (RadioGroup) popupView.findViewById(R.id.radio_grp_button_type)).getCheckedRadioButtonId();
-                CustomCommand customCommand = new CustomCommand(relatedButton.getId(),
-                       commandType,
-                        ((TextView)popupView.findViewById(R.id.linear_channels).getTag()).getText().toString());
-
-                app.getCustomDBManager().getCustomCommandsDataSource().addCommand(customCommand);
-
-                initButtonCommand(relatedButton);
-
-                popupWindow.dismiss();
-            }
-        });
-
-        // Popup Settings
-        popupWindow.setFocusable(true);
-        popupWindow.setContentView(popupView);
-        popupWindow.setOutsideTouchable(true);
-        popupWindow.setBackgroundDrawable(new BitmapDrawable());
-        popupWindow.setWidth((int) getScreenWidth() / 3);
-        popupWindow.setHeight((int) getScreenHeight() - app.getSlideFadeMenu().getMeasuredHeight());
-        popupWindow.setAnimationStyle(R.style.PopupAnimation);
-
-        popupWindow.showAsDropDown(app.getSlideFadeMenu());
-
-    }
 
     /* Views initialization and manipulation. */
     /* Initialize Views and Views Logic*/
@@ -367,42 +143,33 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
                 }
                 else
                 {
-                    if (app.getSlideFadeMenu().isShowing())
-                        app.getSlideFadeMenu().closeMenu();
+                    setBottomPanelToAddButton();
 
-                    showPopupSelectButtons();
-
-                    enterEditMode();                }
+                    enterEditMode();
+                }
 
                 editing = !editing;
             }
         });
+    }
 
-        btnAddController.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showAddControllerPopup();
-            }
-        });
+    private void initFramesLayoutData(){
+        rowAmount = customController.getRows();
+        columnAmount = customController.getColumns();
 
-        btnLoadController.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showLoadControllerPopup();
-            }
-        });
+        Log.d(TAG, " Rows = " + rowAmount + ", Columns = " + columnAmount);
     }
 
     private void initFrames(){
-
+        initFramesLayoutData();
 
         DropZoneFrame frame;
         RelativeLayout.LayoutParams frameParams;
-        cellSize = (int)getScreenHeight() / 5;
+        cellSize = rowAmount >= columnAmount ? (int)getScreenHeight() / (rowAmount + 1) : (int)getScreenWidth() / (columnAmount + 1)  ;
         columnSpace = (int) ( getScreenWidth() - (cellSize * columnAmount) ) / (columnAmount+1);
         rowSpace = (int) ( getScreenHeight() - (cellSize * rowAmount) ) / (rowAmount + 1);
 
-        Log.d(TAG, "row space = " + rowSpace + " Column space: "  + columnSpace + "Cell Size: " + cellSize);
+        Log.d(TAG, "row space = " + rowSpace + " Column space: "  + columnSpace + " Cell Size: " + cellSize);
 
         if (reFrames.getChildCount() > 0)
             reFrames.removeAllViews();
@@ -432,7 +199,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
     private void initFramesForController(CustomController controller){
 
-        customeController = controller;
+        customController = controller;
 
         Log.d(TAG, "initFramesForController, Name: " + controller.getName());
 
@@ -440,7 +207,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
         DropZoneFrame frame;
 
-        for (CustomButton btn : customeController.getButtons())
+        for (CustomButton btn : customController.getButtons())
         {
 //            Log.d(TAG, "Btn ID: " + btn.getId());
 
@@ -521,6 +288,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
             ((SimpleButton) v).setState(buttonState);
         }
     }
+
     /* Creating a button inside a frame */
     private void createButtonForFrame(final long buttonId, DropZoneFrame frame,final int type){
 
@@ -537,7 +305,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
         switch (type)
         {
-            case ArduinoLegoFragment.BUTTON_TYPE_SIMPLE:
+            case CustomButton.BUTTON_TYPE_SIMPLE:
                 button = new SimpleButton(getActivity());
 
                 // Assign image
@@ -555,7 +323,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 //                        Log.d(TAG, "New button long click");
                         // Showing the set command popup
                         if (editing)
-                            showSetButtonCommandPopup(button, type);
+                            setBottomPanelToAddCommand(button, type);
                         return true;
                     }
                 });
@@ -567,7 +335,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
                 break;
 
-            case ArduinoLegoFragment.BUTTON_TYPE_SLIDE_VERTICAL:
+            case CustomButton.BUTTON_TYPE_SLIDE_VERTICAL:
 
                 slideButtonLayout =
                         new SlideButtonLayout(getActivity(), LinearLayout.HORIZONTAL, cellSize, true, false);
@@ -579,8 +347,8 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
                     @Override
                     public boolean onLongClick(View v) {
                         if (editing)
-                            showSetButtonCommandPopup(slideButtonLayout, type);
-                        return false;
+                            setBottomPanelToAddCommand(slideButtonLayout, type);
+                        return true;
                     }
                 });
 
@@ -594,7 +362,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
                 break;
 
-            case ArduinoLegoFragment.BUTTON_TYPE_SLIDE_HORIZONTAL:
+            case CustomButton.BUTTON_TYPE_SLIDE_HORIZONTAL:
 
                 slideButtonLayout =
                         new SlideButtonLayout(getActivity(), LinearLayout.VERTICAL, cellSize, true, false);
@@ -606,8 +374,9 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
                     @Override
                     public boolean onLongClick(View v) {
                         if (editing)
-                            showSetButtonCommandPopup(slideButtonLayout, type);
-                        return false;
+                            setBottomPanelToAddCommand(slideButtonLayout, type);
+
+                        return true;
                     }
                 });
 
@@ -680,6 +449,40 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
         }
     }
 
+    /** Creates a addCustomCommand fragment in the bottom panel and then show the panel.*/
+    private void setBottomPanelToAddCommand(View v, int type){
+        AddCustomCommandFragment addCustomCommandFragment = new AddCustomCommandFragment();
+
+        Bundle extras = new Bundle();
+        extras.putLong(CustomButton.BUTTON_ID, v.getId());
+        extras.putInt(CustomButton.BUTTON_TYPE, type);
+
+        addCustomCommandFragment.setArguments(extras);
+
+        getActivity().getSupportFragmentManager().beginTransaction().replace(
+                R.id.container_slide_panel_container, addCustomCommandFragment).commit();
+
+        openBottomPanel(MainActivity.BOTTOM_MENU_OFFSET);
+    }
+
+    /** Creates a addCustomButton fragment in the bottom panel and then show the panel.*/
+    private void setBottomPanelToAddButton(){
+        addCustomButtonFragment = new AddCustomButtonFragment();
+
+        getActivity().getSupportFragmentManager().beginTransaction().replace(
+                R.id.container_slide_panel_container, addCustomButtonFragment).commit();
+
+        openBottomPanel(MainActivity.BOTTOM_MENU_OFFSET);
+    }
+
+    private void openBottomPanel(float offset){
+        ((MainActivity)getActivity()).getSlidingUpPanelLayoutContainer().expandPane(offset);
+    }
+
+    private void closeBottomPanel(){
+        ((MainActivity)getActivity()).getSlidingUpPanelLayoutContainer().collapsePane();
+    }
+
     /* Fragment Mode && Listeners*/
     @Override
     public void onConnected() {
@@ -697,11 +500,10 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
     }
 
     @Override
-    public void onControllerOptionPressed() {
-        Log.d(TAG, "ContollerSettingPressed");
-//        enterEditMode();
-//        showPopupSelectButtons();
-        super.onControllerOptionPressed();
+    public void onControllerSelected(long id) {
+        super.onControllerSelected(id);
+        customController = app.getCustomDBManager().getControllerById(id);
+        initFramesForController(customController);
     }
 
     @Override
@@ -768,7 +570,9 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
             {
                 case CustomCommand.TYPE_ON_OFF:
 
-                    if (buttonState == SimpleButton.STATE_ON) {
+                    app.getConnection().write( String.valueOf(Command.TOGGLE_STATE) + customCommand.getChannel());
+
+                    /*if (buttonState == SimpleButton.STATE_ON) {
                         app.getConnection().write(String.valueOf(Command.STOP) + customCommand.getChannel());
                         ((SimpleButton) v).setState(SimpleButton.STATE_OFF);
                     }
@@ -776,7 +580,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
                     {
                         app.getConnection().write( String.valueOf(Command.GO) + customCommand.getChannel());
                         ((SimpleButton) v).setState(SimpleButton.STATE_ON);
-                    }
+                    }*/
 
                     break;
 
@@ -910,10 +714,8 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
     @Override
     public void onRight(int amount) {
-
         Log.d(TAG, "onRight");
         app.getConnection().write( AccelerometerHandler.getInstance().getAssociatedChannel() + String.valueOf(0) + String.valueOf(amount));
-
     }
 
     @Override
@@ -949,10 +751,10 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
         @Override
         public boolean onDrag(View v, DragEvent event) {
 
-            if (dropZoneImage != null)
+            if (addCustomButtonFragment != null && addCustomButtonFragment.getDropZoneImage() != null)
             {
                 frame = ((DropZoneFrame)v);
-                posInGrid = dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? frame.getColNumber() : frame.getRowNumber();// Get the position of the view in the row
+                posInGrid = addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL ? frame.getColNumber() : frame.getRowNumber();// Get the position of the view in the row
 
                 switch (event.getAction()) {
                     case DragEvent.ACTION_DRAG_STARTED:
@@ -968,7 +770,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
                         if (frame.isEmpty())
                         {
                             // If the size is more then one calculate if the position is available for drop.
-                            if (dropZoneImage.getSize() > 1)
+                            if (addCustomButtonFragment.getDropZoneImage().getSize() > 1)
                             {
                                 calcMovementOptions();
                             }
@@ -1006,7 +808,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
                     case DragEvent.ACTION_DROP:
 
                         // If the spot is available for drop.
-                        if (dropZoneImage != null && frame.canDrop())
+                        if (addCustomButtonFragment != null && addCustomButtonFragment.getDropZoneImage() != null && frame.canDrop())
                         {
                             // Setting the image from the dragged view to the container picked.
                             dropButtonToFrame();
@@ -1031,7 +833,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
 //                    dropZoneImage.setOnDrag(false);
 //                    exitEditMode();
-                        showPopupSelectButtons();
+                        setBottomPanelToAddButton();
 
                         break;
 
@@ -1048,13 +850,13 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
         private void dropButtonToFrame(){
             RelativeLayout.LayoutParams frameParams;
 
-            if (dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL)
+            if (addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL)
             {
                 // Getting the most left frame.
                 frame = getMostLeftFrame();
 
                 frameParams = new RelativeLayout.LayoutParams(
-                        (cellSize * dropZoneImage.getSize()) + ( columnSpace * (dropZoneImage.getSize() - 1) ), cellSize);
+                        (cellSize * addCustomButtonFragment.getDropZoneImage().getSize()) + ( columnSpace * (addCustomButtonFragment.getDropZoneImage().getSize() - 1) ), cellSize);
             }
             else
             {
@@ -1062,7 +864,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
                 frame = getTopFrame();
 
                 frameParams = new RelativeLayout.LayoutParams(
-                        cellSize, (cellSize * dropZoneImage.getSize()) + ( rowSpace * (dropZoneImage.getSize() - 1) ));
+                        cellSize, (cellSize * addCustomButtonFragment.getDropZoneImage().getSize()) + ( rowSpace * (addCustomButtonFragment.getDropZoneImage().getSize() - 1) ));
             }
 
             // Adding the margin to the SlideLayout, The final margin is the actual frame margin + column/row number + cellSize r.g row 3 * 144
@@ -1073,13 +875,13 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
             // Setting the frame to full
             frame.setEmpty(false);
 
-            frame.setTag(dropZoneImage.getType());
+            frame.setTag(addCustomButtonFragment.getDropZoneImage().getType());
 
             // Adding the button to the database
-            CustomButton customButton = new CustomButton(customeController.getId(), dropZoneImage.getType(), dropZoneImage.getSize(), dropZoneImage.getOrientation(), frame.getId());
+            CustomButton customButton = new CustomButton(customController.getId(), addCustomButtonFragment.getDropZoneImage().getType(), addCustomButtonFragment.getDropZoneImage().getSize(), addCustomButtonFragment.getDropZoneImage().getOrientation(), frame.getId());
             long id = app.getCustomDBManager().getCustomButtonsDataSource().addButton(customButton);
 
-            createButtonForFrame(id, frame, dropZoneImage.getType());
+            createButtonForFrame(id, frame, addCustomButtonFragment.getDropZoneImage().getType());
 
             // Hiding the not relevant Zones
             for (DropZoneFrame d : highlightedZones)
@@ -1097,17 +899,17 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
             boolean canGoLeft = true;
             boolean canGoRight = true;
             int leftSteps = 0, rightSteps = 0;
-            int count = dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount; // counting the neighbor view to check
+            int count = addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount; // counting the neighbor view to check
 
             do
             {
                 canGoLeft = canGoLeft && // Making sure the last check was ok to
-                        posInGrid - ( count / (dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount) ) >= 0 && // Check that we are still on the same row
+                        posInGrid - ( count / (addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount) ) >= 0 && // Check that we are still on the same row
                         reFrames.getChildAt(frame.getId() - count) != null && //  Check that the view isnt null
                         ((DropZoneFrame) reFrames.getChildAt(frame.getId() - count)).isEmpty(); // Check that the view is empty;
 
                 canGoRight = canGoRight && // Making sure the last check was ok to
-                        posInGrid + ( count / (dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount) )  < columnAmount && // Check that we are still on the same row
+                        posInGrid + ( count / (addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount) )  < columnAmount && // Check that we are still on the same row
                         reFrames.getChildAt(frame.getId() + count) != null && //  Check that the view isnt null
                         ((DropZoneFrame) reFrames.getChildAt(frame.getId() + count)).isEmpty();
 
@@ -1129,9 +931,9 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
                                 Log.d(TAG, "Count: " + count
                                         + (dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? " CanGoLeft: " : "Can go Down") + String.valueOf(canGoLeft) + " Steps: " + leftSteps
                                         +  (dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? " CanGoRight: " : " Can Go Up ") + String.valueOf(canGoRight) + " Steps: " + rightSteps);*/
-                count += dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount;
+                count += addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount;
 
-            } while ( (canGoLeft || canGoRight) && count < dropZoneImage.getSize() * (dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount) );
+            } while ( (canGoLeft || canGoRight) && count < addCustomButtonFragment.getDropZoneImage().getSize() * (addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount) );
 
             processMovementOptionFindings(canGoLeft, canGoRight, leftSteps, rightSteps);
         }
@@ -1140,13 +942,13 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
             int count;
 
             // If there is a place from left to right of the view
-            if (rightSteps + leftSteps + 1 == dropZoneImage.getSize())
+            if (rightSteps + leftSteps + 1 == addCustomButtonFragment.getDropZoneImage().getSize())
             {
 //                                Log.d(TAG, "There is a place with right and left combine");
 
-                for (int i = frame.getId() - (leftSteps * (dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount)) ;
-                     i <= frame.getId() + (rightSteps * (dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount) ) ;
-                     i += dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount)
+                for (int i = frame.getId() - (leftSteps * (addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount)) ;
+                     i <= frame.getId() + (rightSteps * (addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount) ) ;
+                     i += addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount)
                 {
 //                                    Log.d(TAG, "I: " + i);
                     ((DropZoneFrame) reFrames.getChildAt(i)).setToAvailableForDrop();
@@ -1176,7 +978,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
 //                                Log.d(TAG, "Going To The " + ( canGoLeft ? "Left" : "Right" ));
 
-                while (count < dropZoneImage.getSize() * (dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount) )
+                while (count < addCustomButtonFragment.getDropZoneImage().getSize() * (addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount) )
                 {
                     if (canGoLeft)
                     {
@@ -1189,7 +991,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
                         highlightedZones.add(((DropZoneFrame) reFrames.getChildAt(frame.getId() + count)));
                     }
 
-                    count += dropZoneImage.getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount;
+                    count += addCustomButtonFragment.getDropZoneImage().getOrientation() == LinearLayout.HORIZONTAL ? 1 : rowAmount;
                 }
             }
             else
@@ -1241,50 +1043,4 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
     }
 }
 
-class ImageDragShadowBuilder extends View.DragShadowBuilder {
-    private Drawable shadow;
 
-    private ImageDragShadowBuilder() {
-        super();
-    }
-
-    public static View.DragShadowBuilder fromResource(Context context, int drawableId) {
-        ImageDragShadowBuilder builder = new ImageDragShadowBuilder();
-
-        builder.shadow = context.getResources().getDrawable(drawableId);
-        if (builder.shadow == null) {
-            throw new NullPointerException("Drawable from id is null");
-        }
-
-        builder.shadow.setBounds(0, 0, builder.shadow.getMinimumWidth(), builder.shadow.getMinimumHeight());
-
-        return builder;
-    }
-
-    public static View.DragShadowBuilder fromBitmap(Context context, Bitmap bmp) {
-        if (bmp == null) {
-            throw new IllegalArgumentException("Bitmap cannot be null");
-        }
-
-        ImageDragShadowBuilder builder = new ImageDragShadowBuilder();
-
-        builder.shadow = new BitmapDrawable(context.getResources(), bmp);
-        builder.shadow.setBounds(0, 0, builder.shadow.getMinimumWidth(), builder.shadow.getMinimumHeight());
-
-        return builder;
-    }
-
-    @Override
-    public void onDrawShadow(Canvas canvas) {
-        shadow.draw(canvas);
-    }
-
-    @Override
-    public void onProvideShadowMetrics(Point shadowSize, Point shadowTouchPoint) {
-        shadowSize.x = shadow.getMinimumWidth();
-        shadowSize.y = shadow.getMinimumHeight();
-
-        shadowTouchPoint.x = (int)(shadowSize.x / 2);
-        shadowTouchPoint.y = (int)(shadowSize.y / 2);
-    }
-}

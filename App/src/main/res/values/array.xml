@@ -8,12 +8,12 @@
 
     <!-- Controllers -->
     <string-array name="controllers_types" >
-        <item>@string/servo</item>
+        <!--<item>@string/servo</item>
         <item>@string/motor</item>
         <item>@string/stick_car</item>
         <item>@string/multiple</item>
         <item>@string/custom_controller</item>
-        <item>@string/accelerometer</item>
+        <item>@string/accelerometer</item>-->
     </string-array>
 
 </resources>

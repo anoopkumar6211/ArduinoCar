@@ -4,12 +4,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 
 import com.barunster.arduinocar.R;
-import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
 import com.barunster.arduinocar.views.SlideButtonLayout;
 
 /**

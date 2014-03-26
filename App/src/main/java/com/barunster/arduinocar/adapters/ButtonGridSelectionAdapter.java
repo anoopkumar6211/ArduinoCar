@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.barunster.arduinocar.R;
+import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
 import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
 import com.barunster.arduinocar.views.DropZoneImage;
 
@@ -64,42 +65,42 @@ public class ButtonGridSelectionAdapter extends BaseAdapter {
         {
             buttonImage.setSize(4);
             buttonImage.setOrientation(LinearLayout.HORIZONTAL);
-            buttonImage.setType(ArduinoLegoFragment.buttonTags.get(position));
+            buttonImage.setType(CustomButton.buttonTags.get(position));
         }
         else if (position == 2)
         {
             buttonImage.setSize(4);
             buttonImage.setOrientation(LinearLayout.VERTICAL);
-            buttonImage.setType(ArduinoLegoFragment.buttonTags.get(position));
+            buttonImage.setType(CustomButton.buttonTags.get(position));
         }
         else if (position == 3)
         {
             buttonImage.setSize(3);
             buttonImage.setOrientation(LinearLayout.HORIZONTAL);
-            buttonImage.setType(ArduinoLegoFragment.buttonTags.get(1));
+            buttonImage.setType(CustomButton.buttonTags.get(1));
         }
         else if (position == 4)
         {
             buttonImage.setSize(3);
             buttonImage.setOrientation(LinearLayout.VERTICAL);
-            buttonImage.setType(ArduinoLegoFragment.buttonTags.get(2));
+            buttonImage.setType(CustomButton.buttonTags.get(2));
         }
         else if (position == 5)
         {
             buttonImage.setSize(2);
             buttonImage.setOrientation(LinearLayout.HORIZONTAL);
-            buttonImage.setType(ArduinoLegoFragment.buttonTags.get(1));
+            buttonImage.setType(CustomButton.buttonTags.get(1));
         }
         else if (position == 6)
         {
             buttonImage.setSize(2);
             buttonImage.setOrientation(LinearLayout.VERTICAL);
-            buttonImage.setType(ArduinoLegoFragment.buttonTags.get(2));
+            buttonImage.setType(CustomButton.buttonTags.get(2));
         }
         else
         {
             buttonImage.setSize(position + 1);
-            buttonImage.setType(ArduinoLegoFragment.buttonTags.get(0));
+            buttonImage.setType(CustomButton.buttonTags.get(0));
 
         }
 

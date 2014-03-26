@@ -6,6 +6,6 @@ package com.barunster.arduinocar.interfaces;
 public interface SlideMenuListener {
     public void onSlideMenuOpen();
     public void onSlideMenuClosed();
-    public void onSettingsPressed();
-    public void onControllerOptionPressed();
+    public void onSettingsChanged();
+    public void onControllerSelected(long id);
 }

@@ -28,6 +28,8 @@ public class SimpleListAdapter extends BaseAdapter {
     private List<String> listData = new ArrayList<String>();
     private List<String> listTags = new ArrayList<String>();
 
+    private int textColor = -1;
+
     boolean useTags = false;
 
     //View
@@ -81,6 +83,9 @@ public class SimpleListAdapter extends BaseAdapter {
 
         textView = (TextView) row.findViewById(R.id.txt_simple_row);
 
+        if (textColor != -1)
+            textView.setTextColor(textColor);
+
         textView.setText(listData.get(position));
 
         if (useTags)
@@ -104,5 +109,14 @@ public class SimpleListAdapter extends BaseAdapter {
 
 
         useTags = false;
+    }
+
+    public void setTextColor(int textColor) {
+        this.textColor = textColor;
+    }
+
+    public void setListData(List<String> listData) {
+        this.listData = listData;
+        notifyDataSetChanged();
     }
 }

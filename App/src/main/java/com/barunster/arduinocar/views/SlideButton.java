@@ -1,6 +1,5 @@
 package com.barunster.arduinocar.views;
 
-import android.app.ActionBar;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;

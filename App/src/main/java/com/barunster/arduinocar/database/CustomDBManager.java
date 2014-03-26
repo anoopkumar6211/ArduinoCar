@@ -44,6 +44,30 @@ public class CustomDBManager {
         return customController;
     }
 
+    public List<CustomController> getAllControllers(){
+        List<CustomController> list = new ArrayList<CustomController>();
+        List<CustomController> tmpList;
+
+        tmpList = controllersDataSource.getAllControllers();
+
+        for (CustomController controller : tmpList)
+        {
+            list.add(getControllerById(controller.getId()));
+        }
+
+        return list;
+    }
+
+    public List<String> controllersToStringList(List<CustomController> list){
+        List<String> result = new ArrayList<String>();
+
+        for (CustomController controller : list)
+        {
+            result.add(controller.getName());
+        }
+
+        return result;
+    }
     public ControllersDataSource getControllersDataSource() {
         return controllersDataSource;
     }

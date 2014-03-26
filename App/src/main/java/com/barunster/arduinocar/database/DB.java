@@ -26,7 +26,11 @@ public class DB   {
         db.execSQL("CREATE TABLE "
                 + Table.T_CUSTOM_CONTROLLERS + " ( " + Column.ID + " INTEGER PRIMARY KEY" + COMMA_SEP
 
-                + Column.NAME + TYPE_T
+                + Column.NAME + TYPE_T + COMMA_SEP
+
+                + Column.ROWS + TYPE_I + COMMA_SEP
+
+                + Column.COLUMNS + TYPE_I
 
                 +" );");
     }
@@ -93,5 +97,7 @@ public class DB   {
         public static final String ORIENTATION = "_orientation";
         public static final String POSITION = "_position";
         public static final String CHANNEL = "_channel";
+        public static final String ROWS = "_rows";
+        public static final String COLUMNS = "_columns";
     }
 }
