@@ -15,12 +15,16 @@ public class DropZoneFrame extends FrameLayout {
     private boolean isEmpty = true;
     private int rowNumber = -1;
     private int ColNumber = -1;
+
+    /** When a button with a size that is more then one is added to controller layout the unneeded frames are being hidden.
+     * The Parent id is the id of the view that contain the button. If the frame is not hidden it would not have a parent id.*/
     private int parentId = -1;
+
     private String state = STATE_CAN_DROP;
 
     public DropZoneFrame(Context context) {
         super(context);
-        setNormalState();
+        setNormalMode();
     }
 
     public boolean isEmpty() {
@@ -28,22 +32,22 @@ public class DropZoneFrame extends FrameLayout {
     }
 
     public void setEmpty(boolean isEmpty) {
-        this.isEmpty = isEmpty;
+        parentId = -1; this.isEmpty = isEmpty;
     }
 
-    public void setNotAvailableForDrop(){
+    public void setNotAvailableMode(){
         setBackgroundResource(android.R.color.holo_red_light);
         state = STATE_CANT_DROP;
     }
 
-    public void setToAvailableForDrop(){
+    public void setToAvailableMode(){
         setBackgroundResource(android.R.color.holo_green_light);
         state = STATE_CAN_DROP;
     }
 
-    public void setNormalState(){
+    public void setNormalMode(){
         setBackgroundResource(android.R.color.transparent);
-        state = STATE_CAN_DROP;
+        state = STATE_CANT_DROP;
     }
 
     public void setToEditMode(){
@@ -77,5 +81,9 @@ public class DropZoneFrame extends FrameLayout {
 
     public int getParentId() {
         return parentId;
+    }
+
+    public String getState() {
+        return state;
     }
 }

@@ -5,16 +5,27 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.barunster.arduinocar.views.SlideButtonLayout
-        android:layout_width="wrap_content"
+    <TextView
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="horizontal"
-        android:id="@+id/slide_btn"
-        android:layout_alignParentBottom="true"
-        android:paddingBottom="10dp"
-        app:showMarks="true"
-        app:markAmount="9"
-        app:centerAfterSlideStop="false">
-    </com.barunster.arduinocar.views.SlideButtonLayout>
+        android:text="ControllerLayout"
+        android:id="@+id/txt_controller_name"
+        android:gravity="center"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="9"/>
+
+    <com.barunster.arduinocar.views.ControllerLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/controller_layout"
+        android:layout_weight="1"
+        android:background="@android:color/white"/>
+
+    <FrameLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/space"
+        android:layout_weight="9"
+        />
 
 </LinearLayout>

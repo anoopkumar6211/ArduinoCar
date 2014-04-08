@@ -1,4 +1,4 @@
-package com.barunster.arduinocar.fragments;
+package com.barunster.arduinocar.fragments.not_used;
 
 import android.graphics.Color;
 import android.os.Bundle;
@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import com.barunster.arduinocar.ArduinoCarAppObj;
 import com.barunster.arduinocar.R;
+import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
 
 import braunster.btconnection.Command;
 

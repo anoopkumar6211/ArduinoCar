@@ -19,12 +19,15 @@ import android.widget.GridView;
 import com.barunster.arduinocar.MainActivity;
 import com.barunster.arduinocar.R;
 import com.barunster.arduinocar.adapters.ButtonGridSelectionAdapter;
+import com.barunster.arduinocar.custom_controllers_obj.ImageDragShadowBuilder;
+import com.barunster.arduinocar.fragments.CustomControllerFragment;
+import com.barunster.arduinocar.fragments.MenuFragment;
 import com.barunster.arduinocar.views.DropZoneImage;
 
 /**
  * Created by itzik on 3/24/14.
  */
-public class AddCustomButtonFragment extends Fragment {
+public class AddCustomButtonFragment extends MenuFragment {
     /*Views*/
     private View mainView;
     private DropZoneImage dropZoneImage;
@@ -66,71 +69,21 @@ public class AddCustomButtonFragment extends Fragment {
                 ClipData data = ClipData.newPlainText("", "");
 
                 dropZoneImage = (DropZoneImage) v;
-                dropZoneImage.setOnDrag(true);
+
+                int draggedViewDrawableResourceId = R.drawable.stick_button; // TODO do a switch method to select the resource id by the button type.
 
                 v.startDrag(data,  // the data to be dragged
-                        ImageDragShadowBuilder.fromResource(getActivity(), (Integer) v.getTag()),  // the drag shadow builder
+                        ImageDragShadowBuilder.fromResource(getActivity(), draggedViewDrawableResourceId),  // the drag shadow builder
                         v,      // no need to use local data
                         0          // flags (not currently used, set to 0)
                 );
 
-                ((MainActivity)getActivity()).getSlidingUpPanelLayoutContainer().collapsePane();
+                ((CustomControllerFragment) getActivity().getSupportFragmentManager().findFragmentByTag(MainActivity.MAIN_FRAGMENT_TAG)).closeBottomMenu();
 
                 return false;
             }
         });
     }
-
-    public DropZoneImage getDropZoneImage() {
-        return dropZoneImage;
-    }
 }
 
-class ImageDragShadowBuilder extends View.DragShadowBuilder {
-    private Drawable shadow;
-
-    private ImageDragShadowBuilder() {
-        super();
-    }
-
-    public static View.DragShadowBuilder fromResource(Context context, int drawableId) {
-        ImageDragShadowBuilder builder = new ImageDragShadowBuilder();
-
-        builder.shadow = context.getResources().getDrawable(drawableId);
-        if (builder.shadow == null) {
-            throw new NullPointerException("Drawable from id is null");
-        }
-
-        builder.shadow.setBounds(0, 0, builder.shadow.getMinimumWidth(), builder.shadow.getMinimumHeight());
-
-        return builder;
-    }
-
-    public static View.DragShadowBuilder fromBitmap(Context context, Bitmap bmp) {
-        if (bmp == null) {
-            throw new IllegalArgumentException("Bitmap cannot be null");
-        }
-
-        ImageDragShadowBuilder builder = new ImageDragShadowBuilder();
-
-        builder.shadow = new BitmapDrawable(context.getResources(), bmp);
-        builder.shadow.setBounds(0, 0, builder.shadow.getMinimumWidth(), builder.shadow.getMinimumHeight());
-
-        return builder;
-    }
-
-    @Override
-    public void onDrawShadow(Canvas canvas) {
-        shadow.draw(canvas);
-    }
-
-    @Override
-    public void onProvideShadowMetrics(Point shadowSize, Point shadowTouchPoint) {
-        shadowSize.x = shadow.getMinimumWidth();
-        shadowSize.y = shadow.getMinimumHeight();
-
-        shadowTouchPoint.x = (int)(shadowSize.x / 2);
-        shadowTouchPoint.y = (int)(shadowSize.y / 2);
-    }
-}
 

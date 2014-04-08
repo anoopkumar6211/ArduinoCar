@@ -1,4 +1,4 @@
-package com.barunster.arduinocar.fragments;
+package com.barunster.arduinocar.fragments.not_used;
 
 import android.graphics.Color;
 import android.os.Bundle;
@@ -12,7 +12,8 @@ import android.widget.TextView;
 
 import com.barunster.arduinocar.ArduinoCarAppObj;
 import com.barunster.arduinocar.R;
-import com.barunster.arduinocar.views.ServoSemiCircle;
+import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
+import com.barunster.arduinocar.not_used.ServoSemiCircle;
 import com.barunster.arduinocar.views.SlideButtonLayout;
 
 /**
@@ -60,7 +61,7 @@ public class ServoControlFragment extends ArduinoLegoFragment {
             }
 
             @Override
-            public void onSliding(SlideButtonLayout slideButtonLayout, String direction, int speed) {
+            public void onSliding(SlideButtonLayout slideButtonLayout, int direction, int speed) {
                 Log.d(TAG, "onSliding, Direction: " + direction + " Speed: " + speed);
 
                 app.getConnection().write( ((TextView)mainView.findViewById(R.id.linear_channels).getTag()).getText() + String.valueOf(direction) + String.valueOf(speed));

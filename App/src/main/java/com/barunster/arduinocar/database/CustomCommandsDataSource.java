@@ -26,7 +26,8 @@ public class CustomCommandsDataSource {
     // Columns
     private final static String[] allColumns = {
             DB.Column.ID, DB.Column.ID_BUTTON,
-            DB.Column.TYPE, DB.Column.CHANNEL
+            DB.Column.TYPE, DB.Column.CHANNEL,
+            DB.Column.EXTRA_SPEED_DATA
     };
 
     public CustomCommandsDataSource(Context context){
@@ -63,6 +64,7 @@ public class CustomCommandsDataSource {
         values.put(allColumns[1], customCommand.getButtonId());
         values.put(allColumns[2], customCommand.getType());
         values.put(allColumns[3], customCommand.getChannel());
+        values.put(allColumns[4], customCommand.getExtraSpeedData());
 
         //insert to table
         id = db.insert(DB.Table.T_CUSTOM_COMMANDS, null, values);
@@ -137,6 +139,8 @@ public class CustomCommandsDataSource {
                 cursor.getInt(cursor.getColumnIndex(allColumns[2])),
                 cursor.getString(cursor.getColumnIndex(allColumns[3]))
         );
+
+        customCommand.setExtraSpeedData( cursor.getInt(cursor.getColumnIndex(allColumns[4])) );
 
         return customCommand;
     }

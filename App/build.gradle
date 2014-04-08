@@ -40,4 +40,5 @@ dependencies {
     compile 'com.android.support:appcompat-v7:+'
     compile files('C:/Users/itzik/Documents/GitHub/ArduinoCar/.idea/libraries/bugsense-3.6.jar')
     compile files('C:/Users/itzik/Documents/GitHub/ArduinoCar/.idea/libraries/BTConnection.jar')
+    compile files('C:/Users/itzik/Documents/GitHub/ArduinoCar/.idea/libraries/radial-menu-v4.jar')
 }

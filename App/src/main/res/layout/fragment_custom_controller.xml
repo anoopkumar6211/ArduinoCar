@@ -1,36 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/btn_edit"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:text="E"/>
-
-    <RelativeLayout
+    <com.barunster.arduinocar.views.SlidingUpPanelLayout
+        android:id="@+id/sliding_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/relative_frames"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true">
+        android:gravity="bottom"
+        app:collapsedHeight="0dp"
+        app:flingVelocity="10"
+        app:fadeColor="@android:color/black">
 
-        </RelativeLayout>
-<!--    <GridView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:verticalSpacing="8dp"
-        android:horizontalSpacing="8dp"
-        android:stretchMode="columnWidth"
-        android:gravity="center"
-        android:descendantFocusability="afterDescendants"
-        android:id="@+id/grid"
-        android:layout_marginTop="50dp"/>-->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            >
 
-</RelativeLayout>
+            <com.barunster.arduinocar.views.ControllerLayout
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:id="@+id/controller_layout"
+                android:tag="@string/tag_animation_assigned"
+               ></com.barunster.arduinocar.views.ControllerLayout>
+\
+        </LinearLayout>
+
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/container_slide_panel_container"
+            android:tag="@string/tag_no_animation_assigned"
+            >
+        </FrameLayout>
+
+    </com.barunster.arduinocar.views.SlidingUpPanelLayout>
+
+
+
+</LinearLayout>

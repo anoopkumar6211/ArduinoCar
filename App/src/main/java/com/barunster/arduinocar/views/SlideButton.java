@@ -20,13 +20,12 @@ import java.text.DecimalFormat;
  */
 public class SlideButton extends Button {
 
-
     private static final String TAG = SlideButton.class.getSimpleName();
 
     private int orientation = LinearLayout.VERTICAL, speed;
     private float curX = 0, curY  = 0, point, buttonSlidingLength;
     private OnTouchListener onTouchListener;
-    private String direction = "";
+    private int direction = 0;
     private int width, height, size = -1;
 
     // For formatting a float to have only one number after the decimal point
@@ -45,7 +44,7 @@ public class SlideButton extends Button {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        Log.d(TAG, " Measurements, Width: " + widthMeasureSpec + ", Height: " + heightMeasureSpec);
+//        Log.d(TAG, " Measurements, Width: " + widthMeasureSpec + ", Height: " + heightMeasureSpec);
         width = widthMeasureSpec;
         height = heightMeasureSpec;
     }
@@ -60,7 +59,7 @@ public class SlideButton extends Button {
         else
             setX(curX);
 
-        Log.d(TAG, "onDraw, X: " + curX + " Y: " + curY);
+//        Log.d(TAG, "onDraw, X: " + curX + " Y: " + curY);
 
         super.onDraw(canvas);
 
@@ -69,12 +68,12 @@ public class SlideButton extends Button {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
 
-        Log.d(TAG, "OnLayout");
+//        Log.d(TAG, "OnLayout");
 
         buttonSlidingLength = orientation == LinearLayout.HORIZONTAL ? ((LinearLayout)getParent()).getHeight() : ((LinearLayout)getParent()).getWidth();
 
-        Log.d(TAG, "buttonSlidingLength = " + buttonSlidingLength + " X " + curX +  " Y: " + curY);
-        Log.d(TAG, "Button Width = " + getWidth() + " Button Height = " + getHeight());
+//        Log.d(TAG, "buttonSlidingLength = " + buttonSlidingLength + " X " + curX +  " Y: " + curY);
+//        Log.d(TAG, "Button Width = " + getWidth() + " Button Height = " + getHeight());
 
         setSpeedPoints(ArduinoLegoFragment.DEFAULT_SPEED_POINTS);
 
@@ -165,7 +164,7 @@ public class SlideButton extends Button {
             pos -= (((SlideButtonLayout)getParent()).getMarginLeft() - ((SlideButtonLayout)getParent()).getMarginRight());
         }
 
-        Log.d(TAG, "SetPosition After Margin: " + pos);
+//        Log.d(TAG, "SetPosition After Margin: " + pos);
 
         speed = getSpeed(pos, point );
         direction = getDirectionForPosition(pos);
@@ -183,7 +182,7 @@ public class SlideButton extends Button {
         else if (pos + (against/2) > buttonSlidingLength)
             pos = buttonSlidingLength - (against/2);
 
-        Log.d(TAG, "Final SetPosition: " + (pos - (against/2)) );
+//        Log.d(TAG, "Final SetPosition: " + (pos - (against/2)) );
 
         return pos - (against/2);
     }
@@ -214,7 +213,7 @@ public class SlideButton extends Button {
     }
     /** Setting the button to its center position.*/
     public void setToCenter(){
-        Log.d(TAG, "Setting button to center, Center is: " + getCenter());
+//        Log.d(TAG, "Setting button to center, Center is: " + getCenter());
         setPosition(getCenter());
     }
 
@@ -226,7 +225,7 @@ public class SlideButton extends Button {
 
         int speed;
 
-        Log.d(TAG, "getSpeed, buttonSlidingLength = " + buttonSlidingLength + ", Pos = " + pos + ", Point = " + point);
+//        Log.d(TAG, "getSpeed, buttonSlidingLength = " + buttonSlidingLength + ", Pos = " + pos + ", Point = " + point);
 
         if ( pos > buttonSlidingLength/2 )
         {
@@ -246,16 +245,16 @@ public class SlideButton extends Button {
 
     }
 
-    private String getDirectionForPosition(float position){
-        String direction;
+    private int getDirectionForPosition(float position){
+        int direction;
 
         if ( position < buttonSlidingLength/2 )
         {
-            direction =  getResources().getString(R.string.tag_engine_direction_forwards);
+            direction =  getResources().getInteger(R.integer.left);
         }
         else
         {
-            direction = getResources().getString(R.string.tag_engine_direction_backwards);
+            direction =  getResources().getInteger(R.integer.right);
         }
 
         return direction;
@@ -278,7 +277,7 @@ public class SlideButton extends Button {
     /* Getters And Setters*/
     public void setSpeedPoints(int speedPoints){
         point = Float.parseFloat(df.format((buttonSlidingLength / 2) / speedPoints));
-        Log.d(TAG, "Setting SpeedPoints, " + " ButtonSlidingLength = " + buttonSlidingLength + " speedPoints = " + speedPoints +  ", Point = " + point);
+//        Log.d(TAG, "Setting SpeedPoints, " + " ButtonSlidingLength = " + buttonSlidingLength + " speedPoints = " + speedPoints +  ", Point = " + point);
     }
 
     public void setSize(int size) {
@@ -297,7 +296,7 @@ public class SlideButton extends Button {
         return speed;
     }
 
-    public String getDirection() {
+    public int getDirection() {
         return direction;
     }
 }

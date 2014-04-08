@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,7 +20,7 @@ import com.barunster.arduinocar.ArduinoCarAppObj;
 import com.barunster.arduinocar.MainActivity;
 import com.barunster.arduinocar.R;
 import com.barunster.arduinocar.adapters.SimpleListAdapter;
-import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
+import com.barunster.arduinocar.fragments.MenuFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -262,7 +261,7 @@ public class ConnectionInfoFragment extends MenuFragment {
     public void setUserVisibleHint(boolean isVisibleToUser) {
         if (isVisibleToUser && app != null && btnConnect != null)
         {
-            Log.d(TAG, "visible");
+            Log.d(TAG, "visible" );
             if (app.getConnection().isConnected())
                 btnConnect.setText(getResources().getString(R.string.connected));
             else

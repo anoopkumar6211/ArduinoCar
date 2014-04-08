@@ -4,21 +4,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-<!--    <com.sothree.slidinguppanel.SlidingUpPanelLayout
-        xmlns:sothree="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/sliding_layout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="bottom"
-        sothree:collapsedHeight="68dp"
-        sothree:shadowHeight="4dp"
-        sothree:dragView="@+id/name">
-
-        </com.sothree.slidinguppanel.SlidingUpPanelLayout>-->
-
-
-
-
     <com.barunster.arduinocar.views.SlidingUpPanelLayout
         android:id="@+id/sliding_layout_main"
         android:layout_width="match_parent"
@@ -28,39 +13,21 @@
         app:flingVelocity="1000"
         app:fadeColor="@android:color/black">
 
-        <com.barunster.arduinocar.views.SlidingUpPanelLayout
-            android:id="@+id/sliding_layout_container"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:gravity="bottom"
-            app:collapsedHeight="0dp"
-            app:flingVelocity="10"
-            app:fadeColor="@android:color/black">
+            android:orientation="vertical">
+
 
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:id="@+id/container"
-                android:tag="@string/tag_no_animation_assigned">
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/btn_menu"
-                    android:text="M"
-                    android:layout_gravity="top"/>
-
-            </FrameLayout>
-
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:id="@+id/container_slide_panel_container"
                 android:tag="@string/tag_no_animation_assigned"
-                android:background="@android:color/black">
+                >
             </FrameLayout>
 
-        </com.barunster.arduinocar.views.SlidingUpPanelLayout>
+        </LinearLayout>
 
         <FrameLayout
             android:layout_width="match_parent"

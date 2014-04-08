@@ -1,6 +1,7 @@
 package com.barunster.arduinocar.views;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -26,6 +27,8 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
     private static final int NUMBER_OF_SERVO_POSITIONS = 9;
 
+    private static final boolean DEBUG = false;
+
     /* Views*/
     private SlideButton btnSlide;
     private TextView txtPos, txtFloatingCurPos;
@@ -35,10 +38,12 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
     private SlideButtonListener slideButtonListener;
 
     private float  buttonSlidingLength, startingPos, point;
-    private int stickSize = -1, speedPoints, curPos, numberOfMarks;
-    private int marginLeft = 0, marginRight = 0, marginBottom = 0, marginTop = 0;
+    private int stickSize = -1, speedPoints = -1, slideDirection , curPos, numberOfMarks;
+    private int marginLeft = 0, marginRight = 0, marginBottom = 0, marginTop = 0, layoutSizeInCells = 0;
     private boolean centerWhenSlideStop = false, showPointMarks = false;
-    private OnLongClickListener slideButtonOnLongClickListener;
+    private OnLongClickListener onLongClickListener;
+    private OnClickListener onClickListener;
+    private int [] position = new int[2];
 
     // The button type. Types are in the ArduinoLegoFragment
     private int type;
@@ -49,6 +54,8 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
     public SlideButtonLayout(Context context, int orientation, int buttonSize, boolean centerWhenSlideStop, boolean showPointMarks) {
         super(context);
 //        Log.d(TAG, "SlideButtonLayout Created" + (showPointMarks ? ", Showint point marks." : "")  );
+
+        init();
 
         setOrientation(orientation);
 
@@ -75,6 +82,8 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
         super(context);
 //        Log.d(TAG, "SlideButtonLayout Created" + (showPointMarks ? ", Showint point marks." : "")  );
 
+        init();
+
         setOrientation(orientation);
 
         if (orientation == HORIZONTAL)
@@ -99,9 +108,11 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
     public SlideButtonLayout(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
 
+        init();
+
         if (!isInEditMode())
         {
-            Log.d(TAG, "reading attributes");
+//            Log.d(TAG, "reading attributes");
             numberOfMarks = attributeSet.getAttributeIntValue(R.styleable.SlideButtonLayout_markAmount, NUMBER_OF_SERVO_POSITIONS);
             // TODO fix problem with define mark amount from xml
         }
@@ -116,38 +127,60 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
         initButton();
     }
 
+    private void init(){
+//        setWillNotDraw(false);
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        Log.d(TAG, " Measurements, Width: " + widthMeasureSpec + ", Height: " + heightMeasureSpec);
+        if (DEBUG)
+            Log.d(TAG, "onMeasure");
+//        Log.d(TAG, " Measurements, Width: " + widthMeasureSpec + ", Height: " + heightMeasureSpec);
 
         // Measuring the size of the markPosition so the button will adjust to it.
         if (stickSize != -1 && btnSlide == null)
         {
+            position = new int[2];
+            ( (View)this.getParent() ).getLocationInWindow(position);
+
+            if (DEBUG)
+                Log.d(TAG, "pos[x] = " + position[0] + " pos [y] = " + position[1]); // TODO fix pos problem
+
+            if (getOrientation() == HORIZONTAL)
+            {
+                setMargins(getMarginLeft(), getMarginTop() + position[1], getMarginRight(), getMarginBottom()); // Adding the distance from the top.
+            }
+
             if(showPointMarks)
             {
-                Log.d(TAG, "Position Marks Measurements, Width: " + linearPositions.getMeasuredWidth() + ", Height: " + linearPositions.getMeasuredHeight());
+//                Log.d(TAG, "Position Marks Measurements, Width: " + linearPositions.getMeasuredWidth() + ", Height: " + linearPositions.getMeasuredHeight());
                 stickSize -= getOrientation() == HORIZONTAL ? linearPositions.getMeasuredWidth() : linearPositions.getMeasuredHeight();
-                Log.d(TAG, "StickSize: " + stickSize);
+//                Log.d(TAG, "StickSize: " + stickSize);
             }
 
             initButton();
         }
     }
 
+
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        super.onLayout(changed, l, t, r, b);
+        if (DEBUG)
+            Log.d(TAG, "OnLayout");
 
-        Log.d(TAG, "OnLayout");
         buttonSlidingLength = getOrientation() == LinearLayout.HORIZONTAL ? getMeasuredHeight() : getMeasuredWidth();
 
         setSpeedPoints(ArduinoLegoFragment.DEFAULT_SPEED_POINTS);
 
-        super.onLayout(changed, l, t, r, b);
+
     }
 
     public void setMargins(int l, int t, int r,int b){
-        Log.d(TAG, "Layout Margins, Left = " + l + ", Top = " + t + ", Right = " + r + ", Bottom = " + b);
+        if (DEBUG)
+            Log.d(TAG, "Layout Margins, Left = " + l + ", Top = " + t + ", Right = " + r + ", Bottom = " + b);
+
         this.marginLeft = l;
         this.marginRight = r;
         this.marginBottom = b;
@@ -168,7 +201,7 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
 //        Log.d(TAG, "%2: " + ((curPos - (stickSize / 2)) % 2));
 //
-        Log.d(TAG, "X: " + (int) motionEvent.getRawX() + " Y: " + (int) motionEvent.getRawY() );
+//        Log.d(TAG, "X: " + (int) motionEvent.getRawX() + " Y: " + (int) motionEvent.getRawY() );
 
         switch (motionEvent.getAction()) {
 
@@ -195,12 +228,20 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
                         return true;
                 }
 
-                if (slideButtonListener != null)
-                    slideButtonListener.onSliding(this, btnSlide.getDirection(), btnSlide.getSpeed());
+                if (speedPoints != btnSlide.getSpeed() || slideDirection != btnSlide.getDirection()) {
+                    speedPoints = btnSlide.getSpeed();
+                    slideDirection = btnSlide.getDirection();
+
+                    if (slideButtonListener != null)
+                        slideButtonListener.onSliding(this, slideDirection, speedPoints);
                     else Log.e(TAG, " No Slide Button Listener");
+                }
+
                 break;
 
             case MotionEvent.ACTION_UP:
+
+                speedPoints = centerWhenSlideStop ? 0 : speedPoints;
 
                 if (centerWhenSlideStop)
                     btnSlide.setToCenter();
@@ -219,6 +260,9 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
     @Override
     public void onClick(View v) {
+        if (DEBUG)
+            Log.d(TAG, "onClick");
+
         if (v instanceof TextView)
         {
             float curPos;
@@ -235,7 +279,8 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
                 curPos = getOrientation()==HORIZONTAL ? v.getY() + v.getHeight() / 2 : v.getX() + v.getWidth() / 2;
             }
 
-            Log.d(TAG, "Click CurPos: " +  curPos);
+            if (DEBUG)
+                Log.d(TAG, "Click CurPos: " +  curPos);
 
             btnSlide.setPosition(curPos, false);
 
@@ -255,8 +300,11 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
         btnSlide.setOnTouchListener(this);
 
-        if (slideButtonOnLongClickListener != null)
-            btnSlide.setOnLongClickListener(slideButtonOnLongClickListener);
+        if (onClickListener != null)
+            btnSlide.setOnClickListener(onClickListener);
+
+        if (onLongClickListener != null)
+            btnSlide.setOnLongClickListener(onLongClickListener);
 
 //        LinearLayout.LayoutParams params = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         LinearLayout.LayoutParams params = new LayoutParams(stickSize != -1 ? stickSize : ViewGroup.LayoutParams.WRAP_CONTENT ,
@@ -276,7 +324,7 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
     private void initPositionsMarks(){
         if (showPointMarks)
         {
-            Log.d(TAG, "init position marks");
+//            Log.d(TAG, "init position marks");
             linearPositions = new LinearLayout(getContext());
             linearPositions.setOrientation(getOrientation() == HORIZONTAL ? VERTICAL : HORIZONTAL);
 //            linearPositions.setPadding(0,5,0,10);
@@ -297,7 +345,9 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
     private void initMarks(){
         if (showPointMarks && linearPositions != null && linearPositions.getChildCount() == 0) //  Making sure not to over populate the view
         {
-            Log.d(TAG, "Init marks, " + numberOfMarks);
+            if (DEBUG)
+                Log.d(TAG, "Init marks, " + numberOfMarks);
+
             LinearLayout.LayoutParams params = getOrientation() == HORIZONTAL ? new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT ) :
                     new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT );
             params.weight = 1;
@@ -333,7 +383,8 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
         int speed;
 
-        Log.d(TAG, "getSpeed, buttonSlidingLength = " + buttonSlidingLength + ", Pos = " + pos + ", Point = " + point);
+        if (DEBUG)
+            Log.d(TAG, "getSpeed, buttonSlidingLength = " + buttonSlidingLength + ", Pos = " + pos + ", Point = " + point);
 
         if ( pos > buttonSlidingLength/2 )
         {
@@ -372,15 +423,16 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
     public void setSpeedPoints(int speedPoints){
         point = Float.parseFloat(df.format((buttonSlidingLength / 2) / speedPoints));
-        Log.d(TAG, "Setting SpeedPoints, " + " ButtonSlidingLength = " + buttonSlidingLength + " speedPoints = " + speedPoints +  ", Point = " + point);
-    }
 
+        if (DEBUG)
+           Log.d(TAG, "Setting SpeedPoints, " + " ButtonSlidingLength = " + buttonSlidingLength + " speedPoints = " + speedPoints +  ", Point = " + point);
+    }
 
     /* Interfaces */
     public interface SlideButtonListener{
         public void onSlideStop(SlideButtonLayout slideButtonLayout, int pos);
         public void onSlideStarted(SlideButtonLayout slideButtonLayout);
-        public void onSliding(SlideButtonLayout slideButtonLayout,String direction, int speed);
+        public void onSliding(SlideButtonLayout slideButtonLayout,int direction, int speed);
         public void onMarkedPositionPressed(SlideButtonLayout slideButtonLayout, String direction, int PosNumber, int position);
     }
 
@@ -388,8 +440,16 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
         this.slideButtonListener = slideButtonListener;
     }
 
-    public void setOnSlideButtonLongClickListener(OnLongClickListener onLongClickListener){
-        slideButtonOnLongClickListener = onLongClickListener;
+    @Override
+    public void setOnClickListener(OnClickListener l) {
+        super.setOnClickListener(l);
+        onClickListener = l;
+    }
+
+    @Override
+    public void setOnLongClickListener(OnLongClickListener l) {
+        super.setOnLongClickListener(l);
+        onLongClickListener = l;
     }
 
     /* Getters And Setters */
@@ -436,5 +496,13 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
     public int getType() {
         return type;
+    }
+
+    public int getLayoutSizeInCells() {
+        return layoutSizeInCells;
+    }
+
+    public void setLayoutSizeInCells(int layoutSizeInCells) {
+        this.layoutSizeInCells = layoutSizeInCells;
     }
 }

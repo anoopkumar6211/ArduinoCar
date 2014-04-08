@@ -19,9 +19,10 @@ public class CustomButton {
 
     public static final List<Integer> buttonTags = new ArrayList<Integer>( Arrays.asList(new Integer[]{BUTTON_TYPE_SIMPLE, BUTTON_TYPE_SLIDE_HORIZONTAL, BUTTON_TYPE_SLIDE_VERTICAL}));
 
-    private long id , controllerId;
-    private int type, size, orientation, position;
+    private long id = -1 , controllerId;
+    private int type, size, orientation = -1, position;
     private CustomCommand customCommand;
+    private boolean centerAfterDrop = false, showMarks = false;
 
     public CustomButton(long id, long controllerId, int type, int size, int orientation, int position) {
         this.id = id;
@@ -33,7 +34,6 @@ public class CustomButton {
     }
 
     public CustomButton(long controllerId, int type, int size, int orientation, int position) {
-        this.id = id;
         this.controllerId = controllerId;
         this.type = type;
         this.size = size;
@@ -65,11 +65,35 @@ public class CustomButton {
         return position;
     }
 
+    public void setPosition(int position) {
+        this.position = position;
+    }
+
     public void setCustomCommand(CustomCommand customCommand) {
         this.customCommand = customCommand;
     }
 
     public CustomCommand getCustomCommand() {
         return customCommand;
+    }
+
+    public boolean centerAfterDrop() {
+        return centerAfterDrop;
+    }
+
+    public boolean showMarks() {
+        return showMarks;
+    }
+
+    public void setShowMarks(boolean showMarks) {
+        this.showMarks = showMarks;
+    }
+
+    public void setCenterAfterDrop(boolean centerAfterDrop) {
+        this.centerAfterDrop = centerAfterDrop;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 }

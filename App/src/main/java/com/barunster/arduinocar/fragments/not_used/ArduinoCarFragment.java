@@ -1,5 +1,5 @@
 
-package com.barunster.arduinocar.fragments;
+package com.barunster.arduinocar.fragments.not_used;
 
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
@@ -22,6 +22,7 @@ import android.widget.Toast;
 import com.barunster.arduinocar.ArduinoCarAppObj;
 import com.barunster.arduinocar.R;
 import com.barunster.arduinocar.adapters.SimpleListAdapter;
+import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;

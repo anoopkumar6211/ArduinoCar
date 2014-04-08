@@ -147,7 +147,9 @@ public class ControllersDataSource {
         open();
 
         boolean isDeleted = db.delete(DB.Table.T_CUSTOM_CONTROLLERS, allColumns[0] + " = " + id, null) > 0;
+        db.delete(DB.Table.T_CUSTOM_BUTTONS, DB.Column.ID_CONTROLLER + " = " + id, null);
 
+        // TODO delete commands
         close();
 
         return isDeleted;

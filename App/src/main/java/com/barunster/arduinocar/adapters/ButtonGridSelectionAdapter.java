@@ -57,9 +57,7 @@ public class ButtonGridSelectionAdapter extends BaseAdapter {
             buttonImage = (DropZoneImage) convertView;
         }
 
-//        buttonImage.setImageResource(mThumbIds[position]);
         buttonImage.setImageDrawable(context.getResources().getDrawable(mThumbIds[position]));
-        buttonImage.setTag(mThumbIds[position]);
 
         if (position == 1)
         {

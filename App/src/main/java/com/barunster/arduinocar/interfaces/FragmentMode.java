@@ -7,4 +7,6 @@ public interface FragmentMode {
     public void onConnected();
     public void onConnecting();
     public void onDisconnected();
+    public void onFullScreen();
+    public void onExitFullScreen();
 }

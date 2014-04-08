@@ -356,6 +356,10 @@ public class SlidingUpPanelLayout extends ViewGroup {
         mShadowDrawable = drawable;
     }
 
+    public float getmSlideOffset() {
+        return mSlideOffset;
+    }
+
     void dispatchOnPanelSlide(View panel) {
         if (mPanelSlideListener != null) {
             mPanelSlideListener.onPanelSlide(panel, mSlideOffset);

@@ -20,12 +20,16 @@
     <string name="controller_name">Controller Name</string>
     <string name="auto_connect">Auto Connect</string>
     <string name="auto_disconnect">Auto Disconnect</string>
+    <string name="rows">Rows</string>
+    <string name="columns">Columns</string>
 
-    <!-- Menu Buttons -->
+    <!-- Top & Bottom Menu Buttons -->
     <string name="connection_info">Connection Info</string>
     <string name="settings">Settings</string>
     <string name="controllers">Controllers</string>
     <string name="controller_settings">Controller Settings</string>
+    <string name="add_button">Add Button</string>
+    <string name="edit_button">Edit Button</string>
     <string name="close">Close</string>
 
     <!-- TAGS -->

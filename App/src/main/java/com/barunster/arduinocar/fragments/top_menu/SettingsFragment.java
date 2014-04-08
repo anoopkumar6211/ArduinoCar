@@ -2,13 +2,12 @@ package com.barunster.arduinocar.fragments.top_menu;
 
 
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.barunster.arduinocar.R;
+import com.barunster.arduinocar.fragments.MenuFragment;
 
 /**
  * Created by itzik on 3/24/14.

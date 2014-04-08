@@ -2,7 +2,6 @@ package com.barunster.arduinocar;
 
 import android.app.Application;
 import android.content.SharedPreferences;
-import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.view.Gravity;
 import android.view.ViewGroup;
@@ -10,7 +9,7 @@ import android.widget.LinearLayout;
 
 import com.barunster.arduinocar.custom_controllers_obj.AccelerometerHandler;
 import com.barunster.arduinocar.database.CustomDBManager;
-import com.barunster.arduinocar.views.SlideFadeMenu;
+import com.barunster.arduinocar.not_used.SlideFadeMenu;
 
 import braunster.btconnection.BTConnection;
 

@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Point;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -21,12 +22,13 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import com.barunster.arduinocar.adapters.SimpleListAdapter;
 import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
 import com.barunster.arduinocar.fragments.CustomControllerFragment;
+import com.barunster.arduinocar.fragments.not_used.MultiEngineControlFragment;
+import com.barunster.arduinocar.fragments.bottom_menu.BottomMenuFragment;
 import com.barunster.arduinocar.fragments.top_menu.ConnectionInfoFragment;
 import com.barunster.arduinocar.fragments.top_menu.TopMenuFragment;
 import com.barunster.arduinocar.interfaces.SlideMenuListener;
@@ -36,7 +38,7 @@ import java.util.ArrayList;
 
 import braunster.btconnection.BTConnection;
 
-public class MainActivity extends FragmentActivity implements SlideMenuListener {
+public class MainActivity extends FragmentActivity {
 
     // TODO fix animation maybe problem with smaller screens fromXdelte to Xdelta
     // TODO xml data transfer or json
@@ -44,10 +46,14 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
 
     private final String TAG = MainActivity.class.getSimpleName();
 
-    private static final float TOP_MENU_OFFSET = 0.8f;
-    public static final float BOTTOM_MENU_OFFSET = 0.5f;
+    private static final float TOP_MENU_OFFSET = 0.9f;
+    private static final int TOP_MENU_SIZE_DIVIDER = 10;
+    private static final boolean DEBUG = false;
 
     public static final String BLUETOOTH_DEVICE_NAME = "bluetooth_device_name";
+    public static final String MAIN_FRAGMENT_TAG = "main_fragment_tag";
+    public static final String FULL_SCREEN_MODE  = "full_screen_mode";
+    public static final String CONTROLLER_ID  = "controller_id";
 
 
     // Bluetooth connection related
@@ -55,19 +61,15 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
     private BluetoothDevice bluetoothDevice;
     private ArrayList<BluetoothDevice> bluetoothDevices;
     private SimpleListAdapter simpleListAdapter;
-    private boolean isScanning = false;
+    private boolean isScanning = false, isFullScreenMode = false, doubleBackToExitPressedOnce = false;
     private Dialog connectToDeviceDialog;
-
+    private long controllerId = -1;
     private ArduinoCarAppObj app;
 
     private int MeasuredWidth, MeasuredHeight;
 
     /* Views*/
-    private Button btnMenu;
-    private SlidingUpPanelLayout slidingUpPanelLayoutMain, slidingUpPanelLayoutContainer;
-
-    /* Popups */
-    private PopupWindow popupSlideFadeMenu;
+    private SlidingUpPanelLayout slidingUpPanelLayoutMain;
 
     /* Animations */
     Animation fadeOut, fadeIn;
@@ -97,32 +99,30 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
         }
         else
         {
+            Toast.makeText(this, "from savedInstanceBundle activity", Toast.LENGTH_SHORT).show();
+
+            if (DEBUG)
+                Log.i(TAG, " activity starts from saved instance bundle.");
+
             createFragment(savedInstanceState.getString(ArduinoLegoFragment.FRAGMENT_TYPE));
+
+            isFullScreenMode = savedInstanceState.getBoolean(FULL_SCREEN_MODE, false);
+
+            controllerId = savedInstanceState.getLong(CONTROLLER_ID, -1);
+            onControllerSelected(controllerId);
         }
-
-        btnMenu = (Button) findViewById(R.id.btn_menu);
-
-        btnMenu.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (slidingUpPanelLayoutMain != null) {
-                    slidingUpPanelLayoutMain.expandPane(TOP_MENU_OFFSET);
-                    slidingUpPanelLayoutContainer.collapsePane();
-                }
-            }
-        });
-
-//        app.setSlideFadeMenu(new SlideFadeMenu(this));
-//        app.getSlideFadeMenu().setSlideMenuListener(this);
-//        ((FrameLayout) findViewById(R.id.container)).addView(app.getSlideFadeMenu()); // TODO chanege
 
         initSlidingUpPanel();
 
+        if (isFullScreenMode)
+            setFullScreen();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        if (DEBUG)
+            Log.d(TAG, "onResume");
 
         // Reconnect to device
         if(ArduinoCarAppObj.prefs.getBoolean(ConnectionInfoFragment.PREFS_AUTO_CONNECT, true))
@@ -140,6 +140,8 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
     @Override
     protected void onPause() {
         super.onPause();
+        if (DEBUG)
+            Log.d(TAG, "onPause");
 
         if(ArduinoCarAppObj.prefs.getBoolean(ConnectionInfoFragment.PREFS_AUTO_DISCONNECT, true))
             app.getConnection().close();
@@ -148,11 +150,59 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        if (fragment != null)
-            outState.putString(ArduinoLegoFragment.FRAGMENT_TYPE, fragment.getType());
+    protected void onStop() {
+        super.onStop();
+        if (DEBUG)
+            Log.d(TAG, "onStop");
+    }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (DEBUG)
+            Log.d(TAG, "onDestroy");
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+
+        if (fragment != null) {
+
+            outState.putString(ArduinoLegoFragment.FRAGMENT_TYPE, fragment.getType());
+            outState.putBoolean(FULL_SCREEN_MODE, isFullScreenMode);
+            outState.putLong(CONTROLLER_ID, controllerId);
+        }
+        else
+            Toast.makeText(this, "Fragment is null when saving instance bundle", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (isFullScreenMode) {
+
+
+            if (doubleBackToExitPressedOnce) {
+                exitFullScreen();
+                return;
+            }
+
+            this.doubleBackToExitPressedOnce = true;
+            Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
+
+            new Handler().postDelayed(new Runnable() {
+
+                @Override
+                public void run() {
+                    doubleBackToExitPressedOnce = false;
+                }
+            }, 2000);
+
+        }
+        else {
+            Toast.makeText(this, "Exit!", Toast.LENGTH_SHORT).show();
+            super.onBackPressed();
+        }
     }
 
     private void ConnectToDevice(String deviceName){
@@ -201,31 +251,25 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
     }
 
     private void initSlidingUpPanel(){
-
-        /* Top Panel*/
         slidingUpPanelLayoutMain = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout_main);
-        slidingUpPanelLayoutMain.setShadowDrawable(getResources().getDrawable(R.drawable.above_shadow));
 
-        createSlidePanelFragment();
+        slidingUpPanelLayoutMain.setShadowDrawable(getResources().getDrawable(R.drawable.above_shadow));
 
         slidingUpPanelLayoutMain.setEnableDragViewTouchEvents(true);
 
+        slidingUpPanelLayoutMain.setPanelHeight(MeasuredHeight / TOP_MENU_SIZE_DIVIDER);
 
-//        slidingUpPanelLayout.setPanelHeight(200);
+        /* Top Panel*/
         slidingUpPanelLayoutMain.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
             @Override
             public void onPanelSlide(View panel, float slideOffset) {
-                Log.i(TAG, "onPanelSlide, offset " + slideOffset);
+
+                if (DEBUG)
+                    Log.i(TAG, "onPanelSlide, offset " + slideOffset);
 
                 // When menu is only slightly shown set a click listener to the frame so iw will close it when click.
                 if (slideOffset == TOP_MENU_OFFSET)
                 {
-                    findViewById(R.id.container).setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            slidingUpPanelLayoutMain.collapsePane();
-                        }
-                    });
                 }
                 else if (slideOffset < TOP_MENU_OFFSET)
                 {
@@ -243,72 +287,58 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
 
             @Override
             public void onPanelExpanded(View panel) {
-                Log.i(TAG, "onPanelExpanded");
+                if (DEBUG)
+                    Log.i(TAG, "onPanelExpanded");
+
                 slidingUpPanelLayoutMain.setSlidingEnabled(false);
 
-                // Closing the bottom menu.
-                slidingUpPanelLayoutContainer.collapsePane();
+//                if (topMenuFragment != null)
+//                    topMenuFragment.onPanelExpanded(panel);
+
+                if (fragment != null)
+                    fragment.onSlideMenuOpen();
             }
 
             @Override
             public void onPanelCollapsed(View panel) {
-                Log.i(TAG, "onPanelCollapsed");
+                if (DEBUG)
+                    Log.i(TAG, "onPanelCollapsed");
+
                 slidingUpPanelLayoutMain.setSlidingEnabled(true);
+
+                if (isFullScreenMode)
+                {
+                    if (DEBUG)
+                        Log.i(TAG, "panel collapsed on full screen mode.");
+
+                    /*if (slidingUpPanelLayoutMain.getmSlideOffset() < 1f)
+                    {
+                        if (DEBUG)
+                            Log.i(TAG, "collapsing the panel.");
+
+                        slidingUpPanelLayoutMain.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                slidingUpPanelLayoutMain.collapsePane();
+                            }
+                        });
+                    }*/
+                }
+//                if (topMenuFragment != null)
+//                    topMenuFragment.onPanelCollapsed(panel);
+
+                if (fragment != null)
+                    fragment.onSlideMenuClosed();
             }
 
             @Override
             public void onPanelAnchored(View panel) {
-                Log.i(TAG, "onPanelAnchored");
+                if (DEBUG)
+                    Log.i(TAG, "onPanelAnchored");
             }
         });
 
-
-        /* Bottom Panel*/
-        slidingUpPanelLayoutContainer = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout_container);
-//        slidingUpPanelLayoutContainer.setShadowDrawable(getResources().getDrawable(R.drawable.above_shadow));
-
-        slidingUpPanelLayoutContainer.setEnableDragViewTouchEvents(true);
-
-        slidingUpPanelLayoutContainer.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
-            @Override
-            public void onPanelSlide(View panel, float slideOffset) {
-                Log.i(TAG, "onPanelSlide,, Container, offset " + slideOffset);
-
-                // When menu is only slightly shown set a click listener to the frame so iw will close it when click.
-                if (slideOffset == BOTTOM_MENU_OFFSET)
-                {
-                    slidingUpPanelLayoutContainer.setSlidingEnabled(false);
-
-                    findViewById(R.id.container).setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            slidingUpPanelLayoutContainer.collapsePane();
-                        }
-                    });
-                }
-                // When closed full eliminating the listener and enabling the slide.
-                else if ( slideOffset == 1.0f)
-                {
-                    findViewById(R.id.container).setOnClickListener(null);
-                }
-            }
-
-            @Override
-            public void onPanelExpanded(View panel) {
-                Log.i(TAG, "onPanelExpanded, Container");
-            }
-
-            @Override
-            public void onPanelCollapsed(View panel) {
-                Log.i(TAG, "onPanelCollapsed, Container");
-            }
-
-            @Override
-            public void onPanelAnchored(View panel) {
-                Log.i(TAG, "onPanelAnchored, Container.");
-
-            }
-        });
+        createSlidePanelFragment();
     }
 
     private void createFragment(String fragmentType){
@@ -330,9 +360,6 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
         else if (fragmentType.equals(ArduinoLegoFragment.FRAGMENT_TYPE_MOTOR)){
             fragment = new EngineControlFragment();
         }
-        else if (fragmentType.equals(ArduinoLegoFragment.FRAGMENT_TYPE_MULTIPLE)){
-            fragment = new MultiEngineControlFragment();
-        }
         else if (fragmentType.equals(ArduinoLegoFragment.FRAGMENT_TYPE_CUSTOM_CONTROLLER)){
             fragment = new CustomControllerFragment();
         }
@@ -340,7 +367,12 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
             fragment = new AccFragment();
         }*/
 
-        fragment = new CustomControllerFragment();
+        if (fragmentType.equals(ArduinoLegoFragment.FRAGMENT_TYPE_MULTIPLE)){
+            fragment = new MultiEngineControlFragment();
+        }
+        else {
+            fragment = new CustomControllerFragment();
+        }
 
         Bundle extras = new Bundle();
         extras.putString(ArduinoLegoFragment.FRAGMENT_TYPE, fragmentType);
@@ -349,12 +381,12 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
 
         fragment.setArguments(extras);
 
-        ft.replace(R.id.container, fragment)
+        ft.replace(R.id.container, fragment, MAIN_FRAGMENT_TAG)
                 .commit();
     }
 
     private void createSlidePanelFragment(){
-
+        // To Menu
         ft = getSupportFragmentManager().beginTransaction();
 
         topMenuFragment = new TopMenuFragment();
@@ -362,12 +394,96 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
         // Used later for refreshing to connection fragment when menu is open.
         topMenuFragment.setUserVisibleHint(false);
 
-        Bundle extras = new Bundle();
-
-        topMenuFragment.setArguments(extras);
-
         ft.replace(R.id.container_slide_panel_main, topMenuFragment)
                 .commit();
+    }
+
+    public void setFullScreen(){
+        fragment.onFullScreen();
+
+        fadeOutTopMenu();
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                isFullScreenMode = true;
+                slidingUpPanelLayoutMain.setPanelHeight(0);
+                slidingUpPanelLayoutMain.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        slidingUpPanelLayoutMain.collapsePane();
+                    }
+                });
+            }
+        }, 700);
+    }
+
+    public void exitFullScreen(){
+        fragment.onExitFullScreen();
+
+        if (DEBUG)
+            Log.d(TAG, "Panel Height: " + MeasuredHeight / TOP_MENU_SIZE_DIVIDER);
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                isFullScreenMode = false;
+                slidingUpPanelLayoutMain.setPanelHeight(MeasuredHeight / TOP_MENU_SIZE_DIVIDER);
+                slidingUpPanelLayoutMain.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        fadeInTopMenu();
+                    }
+                });
+            }
+        }, 700);
+    }
+
+    private void fadeOutTopMenu(){
+        Animation fadeOut = AnimationUtils.loadAnimation(this, R.anim.fade_out);
+        fadeOut.setDuration(700);
+        fadeOut.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                findViewById(R.id.container_slide_panel_main).setAlpha(0);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+
+        findViewById(R.id.container_slide_panel_main).startAnimation(fadeOut);
+    }
+
+    private void fadeInTopMenu(){
+
+        Animation fadeIn = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+        fadeIn.setDuration(700);
+        fadeIn.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+                findViewById(R.id.container_slide_panel_main).setAlpha(1f);
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+
+        findViewById(R.id.container_slide_panel_main).startAnimation(fadeIn);
     }
 
     /** Get Display Size */
@@ -386,36 +502,15 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
 	    Log.d(TAG, " Width - " + MeasuredWidth + " Height: " + MeasuredHeight);
     }
 
-    @Override
-    public void onSlideMenuOpen() {
-        if (fragment != null)
-            fragment.onSlideMenuOpen();
-    }
-
-    @Override
-    public void onSlideMenuClosed() {
-        if (fragment != null)
-            fragment.onSlideMenuClosed();
-    }
-
-    @Override
-    public void onSettingsChanged() {
-
-    }
-
-    @Override
     public void onControllerSelected(long id) {
         fragment.onControllerSelected(id);
+        controllerId  = id;
     }
 
     /* Getters & Setters */
 
     public SlidingUpPanelLayout getSlidingUpPanelLayoutMain() {
         return slidingUpPanelLayoutMain;
-    }
-
-    public SlidingUpPanelLayout getSlidingUpPanelLayoutContainer() {
-        return slidingUpPanelLayoutContainer;
     }
 
     /* Connectivity Changes Receiver */
@@ -475,4 +570,5 @@ public class MainActivity extends FragmentActivity implements SlideMenuListener 
             }
         }
     };
+
 }

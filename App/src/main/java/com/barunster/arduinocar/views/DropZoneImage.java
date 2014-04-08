@@ -3,13 +3,15 @@ package com.barunster.arduinocar.views;
 import android.content.Context;
 import android.widget.ImageView;
 
+import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
+
 /**
  * Created by itzik on 3/12/14.
  */
 public class DropZoneImage extends ImageView{
 
     private int orientation, size, type;
-    private boolean onDrag = false;
+    private CustomButton taggedButton;
 
     public DropZoneImage(Context context) {
         super(context);
@@ -45,11 +47,13 @@ public class DropZoneImage extends ImageView{
         return type;
     }
 
-    public void setOnDrag(boolean onDrag) {
-        this.onDrag = onDrag;
+    public CustomButton getTaggedButton() {
+        return taggedButton;
     }
 
-    public boolean isOnDrag() {
-        return onDrag;
+    public void setTaggedButton(CustomButton taggedButton) {
+        this.taggedButton = taggedButton;
     }
+
+
 }

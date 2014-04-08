@@ -22,6 +22,7 @@ public class ArduinoLegoFragment extends Fragment implements FragmentMode, Slide
 
     /* Controller Types*/
     public static final String FRAGMENT_TYPE_CUSTOM_CONTROLLER = "lego_fragment.type.custom_controller";
+    public static final String FRAGMENT_TYPE_MULTIPLE = "lego_fragment.type.multiple";
 
 /*    public static final String FRAGMENT_TYPE_STICK = "lego_fragment.type.stick";
     public static final String FRAGMENT_TYPE_MOTOR = "lego_fragment.type.motor";
@@ -109,5 +110,13 @@ public class ArduinoLegoFragment extends Fragment implements FragmentMode, Slide
 
     }
 
+    @Override
+    public void onFullScreen() {
 
+    }
+
+    @Override
+    public void onExitFullScreen() {
+
+    }
 }

@@ -3,9 +3,8 @@ package com.barunster.arduinocar.adapters;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
-import android.view.Menu;
 
-import com.barunster.arduinocar.fragments.top_menu.MenuFragment;
+import com.barunster.arduinocar.fragments.MenuFragment;
 
 import java.util.List;
 

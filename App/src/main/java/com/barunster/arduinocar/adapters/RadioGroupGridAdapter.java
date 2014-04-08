@@ -24,15 +24,19 @@ import com.barunster.arduinocar.views.DropZoneImage;
 public class RadioGroupGridAdapter extends BaseAdapter implements CompoundButton.OnCheckedChangeListener {
 
     private static final String TAG = RadioGroupGridAdapter.class.getSimpleName();
+    private static final boolean DEBUG = false;
 
     // Views
     private RadioButton radioButton, selectedButton;
     private int [] listId;
     private Context context;
+    private RadioCheckedListener radioCheckedListener;
+    private int selectedId;
 
-    public RadioGroupGridAdapter(Context context, int[] listId){
+    public RadioGroupGridAdapter(Context context, int[] listId, int selectedId){
         this.context = context;
         this.listId = listId;
+        this.selectedId = selectedId;
     }
 
     @Override
@@ -69,6 +73,16 @@ public class RadioGroupGridAdapter extends BaseAdapter implements CompoundButton
         radioButton.setId(listId[position]);
         radioButton.setText(context.getResources().getString(listId[position]));
 
+
+        if (DEBUG)
+            Log.d(TAG, "selected " + selectedId + " cur " + radioButton.getId());
+
+        // Selecting the type already assigned for the button.
+        if (selectedId == radioButton.getId()) {
+            radioButton.setChecked(true);
+            selectedButton = radioButton;
+        }
+
         return radioButton;
     }
 
@@ -83,6 +97,7 @@ public class RadioGroupGridAdapter extends BaseAdapter implements CompoundButton
 
         if (selectedButton == null) {
             selectedButton = (RadioButton) buttonView;
+            radioCheckedListener.onRadioChecked(selectedButton.getId());
             return;
         }
 
@@ -90,7 +105,18 @@ public class RadioGroupGridAdapter extends BaseAdapter implements CompoundButton
         {
             selectedButton.setChecked(false);
             selectedButton = (RadioButton) buttonView;
+
+            if (radioCheckedListener != null)
+                radioCheckedListener.onRadioChecked(selectedButton.getId());
         }
 
+    }
+
+    public interface RadioCheckedListener{
+        public void onRadioChecked(int id);
+    }
+
+    public void setRadioCheckedListener(RadioCheckedListener radioCheckedListener) {
+        this.radioCheckedListener = radioCheckedListener;
     }
 }

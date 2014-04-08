@@ -53,4 +53,24 @@ public class CustomController {
     public int getColumns() {
         return columns;
     }
+
+    public boolean removeButtonById(long id){
+
+        for (CustomButton btn : buttons)
+            if (btn.getId() == id) {
+                buttons.remove(btn);
+                return true;
+            }
+
+        return false;
+    }
+
+    public CustomButton getCustomButtonById(long id)
+    {
+        for (CustomButton btn : buttons)
+            if (btn.getId() == id)
+                return btn;
+
+        return null;
+    }
 }

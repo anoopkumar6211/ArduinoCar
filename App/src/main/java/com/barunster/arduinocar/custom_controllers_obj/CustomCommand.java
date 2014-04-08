@@ -21,7 +21,7 @@ public class CustomCommand {
     public static final int[] regularButtonCommandTypes = {TYPE_ON_OFF, TYPE_TOGGLE_DIRECTION, TYPE_DIRECTION_LEFT, TYPE_DIRECTION_RIGHT, TYPE_SPEED_UP, TYPE_SPEED_DOWN, TYPE_ACC_CONTROL };
 
     private long id , buttonId;
-    private int type;
+    private int type, extraSpeedData = 20;
     private String channel;
 
     public CustomCommand(long id, long buttonId, int type, String channel) {
@@ -51,5 +51,13 @@ public class CustomCommand {
 
     public String getChannel() {
         return channel;
+    }
+
+    public void setExtraSpeedData(int extraSpeedData) {
+        this.extraSpeedData = extraSpeedData;
+    }
+
+    public int getExtraSpeedData() {
+        return extraSpeedData;
     }
 }
