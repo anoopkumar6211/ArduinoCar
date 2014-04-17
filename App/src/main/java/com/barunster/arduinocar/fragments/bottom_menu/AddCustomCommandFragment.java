@@ -216,16 +216,16 @@ public class AddCustomCommandFragment extends MenuFragment {
                     }
 
                     // Add the command to the database.
-                    app.getCustomDBManager().getCustomCommandsDataSource().addCommand(customCommand);
+                    app.getCustomDBManager().addCommand(customCommand);
 
                     // Adding new data to the button if needed. else refresh the button so new command type will be applied.
                     if (mainView.findViewById(R.id.linear_slide_data).getVisibility() == View.VISIBLE)
                     {
                         // Change the custom button settings.
-                        CustomButton customButton = app.getCustomDBManager().getCustomButtonsDataSource().getButtonByButtonId(buttonId);
+                        CustomButton customButton = app.getCustomDBManager().getButtonById(buttonId);
                         customButton.setShowMarks( ((CheckBox)mainView.findViewById(R.id.check_show_marks)).isChecked() );
                         customButton.setCenterAfterDrop( ((CheckBox) mainView.findViewById(R.id.check_auto_center)).isChecked());
-                        buttonId = app.getCustomDBManager().getCustomButtonsDataSource().updateButtonById(customButton.getId(), customButton);
+                        buttonId = app.getCustomDBManager().updateButtonById(customButton.getId(), customButton);
 
                         if (buttonId == -1)
                             Log.e(TAG, "Problem adding button to the database.");
@@ -259,8 +259,8 @@ public class AddCustomCommandFragment extends MenuFragment {
             this.buttonType = buttonType;
             this.buttonId = buttonId;
 
-            customCommand = app.getCustomDBManager().getCustomCommandsDataSource().getCommandByButtonId(buttonId);
-            customButton = app.getCustomDBManager().getCustomButtonsDataSource().getButtonByButtonId(buttonId);
+            customCommand = app.getCustomDBManager().getCommandByButtonId(buttonId);
+            customButton = app.getCustomDBManager().getButtonById(buttonId);
 
             if (customCommand == null)
                 Log.e(TAG, "CustomCommand is null");

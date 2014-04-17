@@ -34,7 +34,8 @@ public class ArduinoCarAppObj extends Application {
 
         connection = new BTConnection(getApplicationContext() );
 
-        customDBManager = new CustomDBManager(getApplicationContext());
+//        if (CustomDBManager.getInstance() == null)
+            customDBManager = new CustomDBManager(getApplicationContext());
 
         accHandler = new AccelerometerHandler(getApplicationContext());
 

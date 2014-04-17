@@ -1,6 +1,8 @@
 package com.barunster.arduinocar.fragments.not_used;
 
+import android.app.ActionBar;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,24 +13,34 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.barunster.arduinocar.ArduinoCarAppObj;
-import com.barunster.arduinocar.MainActivity;
 import com.barunster.arduinocar.R;
+import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
+import com.barunster.arduinocar.custom_controllers_obj.CustomController;
+import com.barunster.arduinocar.database.CustomDBManager;
 import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
-import com.barunster.arduinocar.fragments.CustomControllerFragment;
-import com.barunster.arduinocar.fragments.bottom_menu.AddCustomButtonFragment;
-import com.barunster.arduinocar.fragments.bottom_menu.AddCustomCommandFragment;
-import com.barunster.arduinocar.views.ControllerLayout;
-import com.barunster.arduinocar.views.SlideButtonLayout;
+import com.barunster.arduinocar.fragments.bottom_menu.BottomMenuFragment;
+import com.barunster.arduinocar.interfaces.ControllerLayoutEventListener;
+import com.barunster.arduinocar.views.BrickControllerLayout;
+import com.barunster.arduinocar.views.FramesControllerLayout;
+import com.barunster.arduinocar.views.SlidingUpPanelLayout;
 
 /**
  * Created by itzik on 3/9/14.
  */
 public class MultiEngineControlFragment extends ArduinoLegoFragment {
 
+    private static final String TAG = MultiEngineControlFragment.class.getSimpleName();
+
+    public static final float BOTTOM_MENU_OFFSET_FULL = 0.5f;
+    private static final int TOP_MENU_SIZE_DIVIDER = 10;
+
     // Views
     private LinearLayout mainView;
-    private ControllerLayout controllerLayout;
+    private BrickControllerLayout controllerLayout;
     ArduinoCarAppObj app;
+
+    SlidingUpPanelLayout slidingUpPanelLayout;
+    BottomMenuFragment bottomMenuFragment;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -41,35 +53,46 @@ public class MultiEngineControlFragment extends ArduinoLegoFragment {
 
         mainView = (LinearLayout) inflater.inflate(R.layout.verical_test, null);
 
-        controllerLayout = (ControllerLayout) mainView.findViewById(R.id.controller_layout);
+        controllerLayout = new BrickControllerLayout(getActivity(), (int) (getScreenHeight()/TOP_MENU_SIZE_DIVIDER));
 
-        ((TextView)mainView.findViewById(R.id.txt_controller_name)).setText(app.getCustomDBManager().getAllControllers().get(0).getName());
+        if (app.getCustomDBManager().getAllControllers().isEmpty())
+        {
+            onControllerSelected(app.getCustomDBManager().addController(new CustomController("Default",0,0 )));
+        }
+        else onControllerSelected(1); // TODO fix default
 
-        controllerLayout.postDelayed(new Runnable() {
+        controllerLayout.setOutputConnection(app.getConnection());
+
+        controllerLayout.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+
+        controllerLayout.setControllerLayoutEventListener(new ControllerLayoutEventListener() {
             @Override
-            public void run() {
-                ScaleAnimation animation = new ScaleAnimation(1.0f, 1f, 1f, 2f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-                animation.setDuration(3000);
-                animation.setAnimationListener(new Animation.AnimationListener() {
-                    @Override
-                    public void onAnimationStart(Animation animation) {
-                        Toast.makeText(getActivity(), "Start", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animation animation) {
-                        Toast.makeText(getActivity(), "End", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animation animation) {
-
-                    }
-                });
-
-                controllerLayout.startAnimation(animation);
+            public void onButtonAdded(CustomButton customButton, View view) {
+                // Adding the button to the database and setting the view id to the id from the database.
+                view.setId((int) app.getCustomDBManager().addButton(customButton));
+                Log.d(TAG, "Button Added, id: " + view.getId());
             }
-        }, 1000 * 5);
+
+            @Override
+            public void onDragEnded() {
+
+            }
+
+            @Override
+            public void onButtonRemoved(long buttonId) {
+
+            }
+
+            @Override
+            public void onButtonChanged(CustomButton customButton, View view) {
+
+            }
+        });
+
+        mainView.addView(controllerLayout);
+
+//        initSlidingUpPanel();
+
          return mainView;
     }
 
@@ -78,7 +101,70 @@ public class MultiEngineControlFragment extends ArduinoLegoFragment {
         super.onResume();
     }
 
+    private void initSlidingUpPanel(){
+        slidingUpPanelLayout = (SlidingUpPanelLayout) mainView.findViewById(R.id.sliding_layout);
 
+        slidingUpPanelLayout.setPanelHeight((int) (getScreenHeight()/TOP_MENU_SIZE_DIVIDER));
+        slidingUpPanelLayout.setSlidingEnabled(false);
+        slidingUpPanelLayout.setEnableDragViewTouchEvents(true);
+
+        /* Bottom Panel*/
+        slidingUpPanelLayout.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
+            @Override
+            public void onPanelSlide(View panel, float slideOffset) {
+//                Log.i(TAG, "onPanelSlide,, Container, offset " + slideOffset);
+
+                if (slideOffset == BOTTOM_MENU_OFFSET_FULL) {
+                    slidingUpPanelLayout.setSlidingEnabled(false);
+                }
+                // When closed full eliminating the listener and enabling the slide.
+                else if (slideOffset == 1.0f) {
+
+                }
+
+                bottomMenuFragment.onPanelSlide(slidingUpPanelLayout, slideOffset);
+            }
+
+            @Override
+            public void onPanelExpanded(View panel) {
+                Log.i(TAG, "onPanelExpanded, Container");
+            }
+
+            @Override
+            public void onPanelCollapsed(View panel) {
+                Log.i(TAG, "onPanelCollapsed, Container");
+            }
+
+            @Override
+            public void onPanelAnchored(View panel) {
+                Log.i(TAG, "onPanelAnchored, Container.");
+
+            }
+        });
+
+        createSlidePanelFragment();
+    }
+
+    @Override
+    public void onControllerSelected(long id) {
+        super.onControllerSelected(id);
+
+//        if (CustomDBManager.getInstance() == null)
+//            new CustomDBManager(getActivity());
+
+        controllerLayout.setController(CustomDBManager.getInstance().getControllerById(id));
+    }
+
+    private void createSlidePanelFragment(){
+        // Bottom Menu
+        bottomMenuFragment = new BottomMenuFragment();
+
+        // Used later for refreshing to connection fragment when menu is open.
+        bottomMenuFragment.setUserVisibleHint(false);
+
+        getFragmentManager().beginTransaction().replace(R.id.container_slide_panel_container, bottomMenuFragment)
+                .commit();
+    }
 
     @Override
     public void onConnected() {

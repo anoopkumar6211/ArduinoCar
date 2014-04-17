@@ -13,6 +13,8 @@ public class DropZoneImage extends ImageView{
     private int orientation, size, type;
     private CustomButton taggedButton;
 
+    private int[] dimensions = new int[2];// Holds the button dimension, first entry is number of rows the button will cover and the second is how much columns.
+
     public DropZoneImage(Context context) {
         super(context);
     }
@@ -51,9 +53,19 @@ public class DropZoneImage extends ImageView{
         return taggedButton;
     }
 
+    /** Set the custom button tag to the view, also setting the orientation to the tagged button orientation. */
     public void setTaggedButton(CustomButton taggedButton) {
         this.taggedButton = taggedButton;
+
+        if (taggedButton != null)
+            orientation = taggedButton.getOrientation();
     }
 
+    public void setDimensions(int[] dimensions) {
+        this.dimensions = dimensions;
+    }
 
+    public int[] getDimensions() {
+        return dimensions;
+    }
 }

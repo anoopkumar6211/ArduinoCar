@@ -1,60 +1,35 @@
 package com.barunster.arduinocar.fragments;
 
-import android.content.ClipData;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Point;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.AdapterView;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.GridView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.PopupWindow;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.barunster.arduinocar.ArduinoCarAppObj;
-import com.barunster.arduinocar.MainActivity;
 import com.barunster.arduinocar.R;
-import com.barunster.arduinocar.adapters.ButtonGridSelectionAdapter;
-import com.barunster.arduinocar.adapters.ControllersListAdapter;
 import com.barunster.arduinocar.custom_controllers_obj.AccelerometerHandler;
 import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
 import com.barunster.arduinocar.custom_controllers_obj.CustomCommand;
 import com.barunster.arduinocar.custom_controllers_obj.CustomController;
-import com.barunster.arduinocar.fragments.bottom_menu.AddCustomButtonFragment;
-import com.barunster.arduinocar.fragments.bottom_menu.AddCustomCommandFragment;
 import com.barunster.arduinocar.fragments.bottom_menu.BottomMenuFragment;
-import com.barunster.arduinocar.views.ControllerLayout;
-import com.barunster.arduinocar.views.DropZoneFrame;
-import com.barunster.arduinocar.views.DropZoneImage;
+import com.barunster.arduinocar.views.BrickControllerLayout;
+import com.barunster.arduinocar.views.FramesControllerLayout;
 import com.barunster.arduinocar.views.SimpleButton;
 import com.barunster.arduinocar.views.SlideButtonLayout;
 import com.barunster.arduinocar.views.SlidingUpPanelLayout;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import braunster.btconnection.Command;
 
 /**
  * Created by itzik on 3/11/14.
  */
-public class CustomControllerFragment extends ArduinoLegoFragment implements View.OnClickListener,ControllerLayout.ControllerLayoutListener, SlideButtonLayout.SlideButtonListener, AccelerometerHandler.AccelerometerEventListener{
+public class CustomControllerFragment extends ArduinoLegoFragment implements View.OnClickListener,FramesControllerLayout.ControllerLayoutListener, SlideButtonLayout.SlideButtonListener, AccelerometerHandler.AccelerometerEventListener{
 
     // TODO handle onpause and on resume for registering and unregistering the accelrometer handler.
 
@@ -66,7 +41,8 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
     /*Views*/
     private LinearLayout mainView;
-    private ControllerLayout controllerLayout;
+    private FramesControllerLayout controllerLayout;
+    private BrickControllerLayout brickControllerLayout;
     private SlidingUpPanelLayout slidingUpPanelLayout;
 
     private BottomMenuFragment bottomMenuFragment;
@@ -82,15 +58,15 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
         if (savedInstanceState == null)
         {
             // if no controller found generate empty frames
-            if (app.getCustomDBManager().getControllersDataSource().getAllControllers().size() == 0) {
+            if (app.getCustomDBManager().getAllControllers().size() == 0) {
                 customController = new CustomController("Default", 3, 3);
-                long id  = app.getCustomDBManager().getControllersDataSource().addController(customController);
+                long id  = app.getCustomDBManager().addController(customController);
                 customController = app.getCustomDBManager().getControllerById(id);
             }
             else
                 // inflating the first controller on the list.
                 customController = app.getCustomDBManager().getControllerById(
-                        app.getCustomDBManager().getControllersDataSource().getAllControllers().get(0).getId() );
+                        app.getCustomDBManager().getAllControllers().get(0).getId() );
         }
         else
         {
@@ -116,7 +92,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 //        initEditButton();
         initSlidingUpPanel();
 
-        controllerLayout = (ControllerLayout) mainView.findViewById(R.id.controller_layout);
+        controllerLayout = (FramesControllerLayout) mainView.findViewById(R.id.controller_layout);
 
         return mainView;
     }
@@ -201,7 +177,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
         slidingUpPanelLayout.collapsePane();
     }
 
-    public ControllerLayout getControllerLayout() {
+    public FramesControllerLayout getControllerLayout() {
         return controllerLayout;
     }
 
@@ -218,9 +194,9 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
             bottomMenuFragment.getEditButtonFragment().refresh(((SimpleButton)v).getType(), v.getId());
             slidingUpPanelLayout.expandPane();
         }
-        else if ( app.getCustomDBManager().getCustomCommandsDataSource().getCommandByButtonId(v.getId()) != null)
+        else if ( customController.getCustomButtonById(v.getId()).getCustomCommand() != null)
         {
-            CustomCommand customCommand = app.getCustomDBManager().getCustomCommandsDataSource().getCommandByButtonId(v.getId() );
+            CustomCommand customCommand = customController.getCustomButtonById(v.getId()).getCustomCommand();
 
             switch (customCommand.getType())
             {
@@ -270,10 +246,10 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
     }
 
     @Override
-    public void onSlideStop(SlideButtonLayout slideButtonLayout, int pos) {
-        if ( app.getCustomDBManager().getCustomCommandsDataSource().getCommandByButtonId(slideButtonLayout.getId() ) != null)
+    public boolean onSlideStop(SlideButtonLayout slideButtonLayout, int pos) {
+        if ( customController.getCustomButtonById(slideButtonLayout.getId()).getCustomCommand() != null)
         {
-            CustomCommand customCommand = app.getCustomDBManager().getCustomCommandsDataSource().getCommandByButtonId(slideButtonLayout.getId() );
+            CustomCommand customCommand = customController.getCustomButtonById(slideButtonLayout.getId()).getCustomCommand();
 
             switch (customCommand.getType())
             {
@@ -295,25 +271,28 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
             if (DEBUG)
                 Log.d(TAG, "Button has command, Type: " + getResources().getString(customCommand.getType()));
         }
+        return !controllerLayout.isEditing();
     }
 
     @Override
-    public void onSlideStarted(SlideButtonLayout slideButtonLayout) {
+    public boolean onSlideStarted(SlideButtonLayout slideButtonLayout) {
         if (controllerLayout.isEditing())
         {
 //            bottomMenuFragment.getEditButtonFragment().refresh(slideButtonLayout.getType(), slideButtonLayout.getId());
 //            slidingUpPanelLayout.expandPane();
         }
+
+        return !controllerLayout.isEditing();
     }
 
     @Override
-    public void onSliding(SlideButtonLayout slideButtonLayout, int direction, int speed) {
-        if ( app.getCustomDBManager().getCustomCommandsDataSource().getCommandByButtonId(slideButtonLayout.getId() ) != null)
+    public boolean onSliding(SlideButtonLayout slideButtonLayout, int direction, int speed) {
+        if ( customController.getCustomButtonById(slideButtonLayout.getId()).getCustomCommand() != null)
         {
             if (DEBUG)
                 Log.d(TAG, "onSliding, Direction: " + String.valueOf(direction) + " Speed: " + speed);
 
-            CustomCommand customCommand = app.getCustomDBManager().getCustomCommandsDataSource().getCommandByButtonId(slideButtonLayout.getId() );
+            CustomCommand customCommand = customController.getCustomButtonById(slideButtonLayout.getId()).getCustomCommand();
 
             switch (customCommand.getType())
             {
@@ -333,16 +312,17 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
             if (DEBUG)
                 Log.d(TAG, "Button has command, Type: " + getResources().getString(customCommand.getType()));
         }
+        return !controllerLayout.isEditing();
     }
 
     @Override
     public void onMarkedPositionPressed(SlideButtonLayout slideButtonLayout, String direction, int PosNumber, int position) {
-        if ( app.getCustomDBManager().getCustomCommandsDataSource().getCommandByButtonId(slideButtonLayout.getId() ) != null)
+        if (customController.getCustomButtonById(slideButtonLayout.getId()).getCustomCommand() != null)
         {
             if (DEBUG)
                 Log.d(TAG, "onMarkedPositionPressed, Direction: " + direction + " Position: " + position + " PosNumber: " + PosNumber);
 
-            CustomCommand customCommand = app.getCustomDBManager().getCustomCommandsDataSource().getCommandByButtonId(slideButtonLayout.getId() );
+            CustomCommand customCommand = customController.getCustomButtonById(slideButtonLayout.getId()).getCustomCommand();
 
             switch (customCommand.getType())
             {
@@ -411,7 +391,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
     /* Controller Layout Listener*/
     @Override
     public void onButtonAdded(CustomButton customButton, View view) {
-        long id = app.getCustomDBManager().getCustomButtonsDataSource().addButton(customButton);
+        long id = app.getCustomDBManager().addButton(customButton);
         view.setId((int) id);
 
         if (DEBUG)
@@ -426,7 +406,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
     @Override
     public void onButtonRemoved(long buttonId) {
-        boolean isDeleted = app.getCustomDBManager().getCustomButtonsDataSource().deleteButtonById(buttonId);
+        boolean isDeleted = app.getCustomDBManager().deleteButtonById(buttonId);
 
         if (DEBUG)
             Log.d(TAG, isDeleted ? " Button is deleted." : "cant delete button");
@@ -434,7 +414,7 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
     @Override
     public void onButtonChanged(CustomButton customButton, View view) {
-        int affectedRows = app.getCustomDBManager().getCustomButtonsDataSource().updateButtonById(customButton.getId(), customButton);
+        int affectedRows = app.getCustomDBManager().updateButtonById(customButton.getId(), customButton);
 
         if (DEBUG)
             Log.d(TAG, "onButtonChanged, Affected Rows = " + affectedRows);

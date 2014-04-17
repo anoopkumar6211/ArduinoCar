@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.Button;
@@ -21,6 +22,7 @@ import java.text.DecimalFormat;
 public class SlideButton extends Button {
 
     private static final String TAG = SlideButton.class.getSimpleName();
+    private static final boolean DEBUG = true;
 
     private int orientation = LinearLayout.VERTICAL, speed;
     private float curX = 0, curY  = 0, point, buttonSlidingLength;
@@ -33,6 +35,10 @@ public class SlideButton extends Button {
 
     public SlideButton(Context context) {
         super(context);
+
+        if (DEBUG)
+            Log.d(TAG, "SlideButton Created.");
+
         setBackgroundResource(R.drawable.stick_button);
     }
 
@@ -44,22 +50,24 @@ public class SlideButton extends Button {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-//        Log.d(TAG, " Measurements, Width: " + widthMeasureSpec + ", Height: " + heightMeasureSpec);
-        width = widthMeasureSpec;
-        height = heightMeasureSpec;
+
+        if (DEBUG)
+            Log.d(TAG, " Measurements, Width: " + getMeasuredWidth() + ", Height: " + getMeasuredHeight());
+
+        width = getMeasuredWidth();
+        height = getMeasuredHeight();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-//        canvas.save();
-//        canvas.translate(curX, curY);
 
         if (orientation == LinearLayout.HORIZONTAL)
             setY(curY);
         else
             setX(curX);
 
-//        Log.d(TAG, "onDraw, X: " + curX + " Y: " + curY);
+        if (DEBUG)
+            Log.d(TAG, "onDraw, X: " + curX + " Y: " + curY);
 
         super.onDraw(canvas);
 
@@ -68,12 +76,17 @@ public class SlideButton extends Button {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
 
-//        Log.d(TAG, "OnLayout");
+        if (DEBUG)
+            Log.d(TAG, "OnLayout");
 
         buttonSlidingLength = orientation == LinearLayout.HORIZONTAL ? ((LinearLayout)getParent()).getHeight() : ((LinearLayout)getParent()).getWidth();
 
-//        Log.d(TAG, "buttonSlidingLength = " + buttonSlidingLength + " X " + curX +  " Y: " + curY);
-//        Log.d(TAG, "Button Width = " + getWidth() + " Button Height = " + getHeight());
+        if (DEBUG)
+        {
+            Log.d(TAG, "buttonSlidingLength = " + buttonSlidingLength + " X " + curX +  " Y: " + curY);
+            Log.d(TAG, "Button Width = " + getMeasuredWidth() + " Button Height = " + getMeasuredHeight());
+        }
+
 
         setSpeedPoints(ArduinoLegoFragment.DEFAULT_SPEED_POINTS);
 
@@ -90,7 +103,7 @@ public class SlideButton extends Button {
 
         if(onTouchListener != null)
             onTouchListener.onTouch(this, event);
-        else
+        else if (DEBUG)
             Log.e(TAG, "No Touch listner for slide button");
 
         return super.onTouchEvent(event);
@@ -101,6 +114,14 @@ public class SlideButton extends Button {
 //        super.setOnTouchListener(get);
         this.onTouchListener = onTouchListener;
     }
+
+    @Override
+    public void setLayoutParams(ViewGroup.LayoutParams params) {
+        super.setLayoutParams(params);
+        if (DEBUG)
+            Log.d(TAG, "LayoutParams, Width: " + params.width + ", Height: " + params.height);
+    }
+
     /** Setting the button to a wanted position.*/
     private void setPosition(float pos){
 

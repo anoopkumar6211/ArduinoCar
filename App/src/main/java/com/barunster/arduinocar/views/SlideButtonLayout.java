@@ -1,8 +1,10 @@
 package com.barunster.arduinocar.views;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -17,6 +19,7 @@ import com.barunster.arduinocar.R;
 import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
 
 import java.text.DecimalFormat;
+import java.util.Random;
 
 /**
  * Created by itzik on 3/10/14.
@@ -27,7 +30,10 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
     private static final int NUMBER_OF_SERVO_POSITIONS = 9;
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
+
+    public static final int SLIDE_HORIZONTALLY = 0;
+    public static final int SLIDE_VERTICALLY = 1;
 
     /* Views*/
     private SlideButton btnSlide;
@@ -36,6 +42,9 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
     /* Interface */
     private SlideButtonListener slideButtonListener;
+
+    /* Paint*/
+    private Paint framePaint; // Use for drawing a frame.
 
     private float  buttonSlidingLength, startingPos, point;
     private int stickSize = -1, speedPoints = -1, slideDirection , curPos, numberOfMarks;
@@ -51,21 +60,31 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
     // For formatting a float to have only one number after the decimal point
     private DecimalFormat df = new DecimalFormat("0.0");
 
-    public SlideButtonLayout(Context context, int orientation, int buttonSize, boolean centerWhenSlideStop, boolean showPointMarks) {
+    public SlideButtonLayout(Context context, int slideDirection, int buttonSize, boolean centerWhenSlideStop, boolean showPointMarks) {
         super(context);
-//        Log.d(TAG, "SlideButtonLayout Created" + (showPointMarks ? ", Showint point marks." : "")  );
+
+        if (DEBUG)
+            Log.d(TAG, "SlideButtonLayout Created" + (showPointMarks ? ", Showing point marks." : "")  + " Button size: " + buttonSize );
 
         init();
 
-        setOrientation(orientation);
+        if (slideDirection == SLIDE_HORIZONTALLY)
+            setOrientation(VERTICAL);
+        else if (slideDirection == SLIDE_VERTICALLY)
+            setOrientation(HORIZONTAL);
+        else throw new IllegalArgumentException("Slide button orientation must be 'SLIDE_HORIZONTALLY' or 'SLIDE_VERTICALLY'.");
 
-        if (orientation == HORIZONTAL)
+        if (getOrientation() == HORIZONTAL)
         {
-            setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            if (DEBUG)
+                Log.d(TAG, "Orientation is Horizontal");
+            setLayoutParams(new LayoutParams(buttonSize, ViewGroup.LayoutParams.MATCH_PARENT));
         }
         else
         {
-            setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            if (DEBUG)
+                Log.d(TAG, "Orientation is Vertical");
+            setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, buttonSize));
         }
 
         this.showPointMarks = showPointMarks;
@@ -75,7 +94,6 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
         initFloatingCurPos();
         initPositionsMarks();
-
     }
 
     public SlideButtonLayout(Context context, int orientation, int buttonSize, boolean centerWhenSlideStop, boolean showPointMarks, int numberOfMarks) {
@@ -128,12 +146,22 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
     }
 
     private void init(){
+        // Setting a random color for the background
+        TypedArray ta = getContext().getResources().obtainTypedArray(R.array.colors);
+        setBackgroundColor(ta.getColor(randInt(0,7), 0));
+        ta.recycle();
+
+
+//        initPaint();
+
 //        setWillNotDraw(false);
     }
+
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
         if (DEBUG)
             Log.d(TAG, "onMeasure");
 //        Log.d(TAG, " Measurements, Width: " + widthMeasureSpec + ", Height: " + heightMeasureSpec);
@@ -163,7 +191,6 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
         }
     }
 
-
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         super.onLayout(changed, l, t, r, b);
@@ -175,6 +202,11 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
         setSpeedPoints(ArduinoLegoFragment.DEFAULT_SPEED_POINTS);
 
 
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
     }
 
     public void setMargins(int l, int t, int r,int b){
@@ -208,7 +240,7 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
             case MotionEvent.ACTION_DOWN:
 
                 if (slideButtonListener != null)
-                    slideButtonListener.onSlideStarted(this);
+                    return slideButtonListener.onSlideStarted(this);
                 else Log.e(TAG, " No Slide Button Listener");
 
                 txtFloatingCurPos.startAnimation(AnimationUtils.loadAnimation(getContext(), R.anim.fade_in));
@@ -233,7 +265,7 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
                     slideDirection = btnSlide.getDirection();
 
                     if (slideButtonListener != null)
-                        slideButtonListener.onSliding(this, slideDirection, speedPoints);
+                        return slideButtonListener.onSliding(this, slideDirection, speedPoints);
                     else Log.e(TAG, " No Slide Button Listener");
                 }
 
@@ -247,7 +279,7 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
                     btnSlide.setToCenter();
 
                 if (slideButtonListener != null)
-                    slideButtonListener.onSlideStop(this, curPos);
+                     return slideButtonListener.onSlideStop(this, curPos);
                 else Log.e(TAG, " No Slide Button Listener");
 
                 txtFloatingCurPos.startAnimation(AnimationUtils.loadAnimation(getContext(), R.anim.fade_out));
@@ -255,7 +287,7 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
                 break;
         }
 
-        return true;
+        return false;
     }
 
     @Override
@@ -294,6 +326,9 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
     /* Private Methods*/
     private void initButton(){
 
+        if (DEBUG)
+            Log.d(TAG, "Init Button");
+
         btnSlide = new SlideButton(getContext());
 
         btnSlide.setOrientation(getOrientation());
@@ -306,19 +341,22 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
         if (onLongClickListener != null)
             btnSlide.setOnLongClickListener(onLongClickListener);
 
-//        LinearLayout.LayoutParams params = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        LinearLayout.LayoutParams params = new LayoutParams(stickSize != -1 ? stickSize : ViewGroup.LayoutParams.WRAP_CONTENT ,
-                stickSize != -1 ? stickSize : ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams params = new LayoutParams(stickSize != -1 ? stickSize : LinearLayout.LayoutParams.WRAP_CONTENT ,
+                stickSize != -1 ? stickSize: LinearLayout.LayoutParams.WRAP_CONTENT);
 
-        params.gravity = getOrientation() == HORIZONTAL ? Gravity.RIGHT : Gravity.BOTTOM;
+//        params.gravity = getOrientation() == HORIZONTAL ? Gravity.RIGHT : Gravity.BOTTOM;
 
-//        Log.d(TAG, " Linear Height: " + getHeight() +  " Linear Width: " + getWidth()
-//                + " Pos Height: " + (linearPositions != null ? linearPositions.getHeight() : 0) + " Pos Width: " + (linearPositions != null ? linearPositions.getWidth() : 0) );
+        if (DEBUG)
+            Log.d(TAG, " Linear Height: " + getMeasuredHeight() +  " Linear Width: " + getMeasuredWidth()
+                + " Pos Height: " + (linearPositions != null ? linearPositions.getMeasuredHeight() : 0) + " Pos Width: " + (linearPositions != null ? linearPositions.getMeasuredWidth() : 0) );
+
         btnSlide.setLayoutParams(params);
 
         btnSlide.setSize(stickSize);
 
         addView(btnSlide);
+
+        btnSlide.onMeasure(MeasureSpec.makeMeasureSpec(stickSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(stickSize, MeasureSpec.EXACTLY));
     }
 
     private void initPositionsMarks(){
@@ -430,9 +468,13 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
     /* Interfaces */
     public interface SlideButtonListener{
-        public void onSlideStop(SlideButtonLayout slideButtonLayout, int pos);
-        public void onSlideStarted(SlideButtonLayout slideButtonLayout);
-        public void onSliding(SlideButtonLayout slideButtonLayout,int direction, int speed);
+        /**The returned value will be passed as the return value of the OnTouchListener handling the slide.*/
+        public boolean onSlideStop(SlideButtonLayout slideButtonLayout, int pos);
+        /**The returned value will be passed as the return value of the OnTouchListener handling the slide.*/
+        public boolean onSlideStarted(SlideButtonLayout slideButtonLayout);
+        /**The returned value will be passed as the return value of the OnTouchListener handling the slide.*/
+        public boolean onSliding(SlideButtonLayout slideButtonLayout,int direction, int speed);
+
         public void onMarkedPositionPressed(SlideButtonLayout slideButtonLayout, String direction, int PosNumber, int position);
     }
 
@@ -504,5 +546,28 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
     public void setLayoutSizeInCells(int layoutSizeInCells) {
         this.layoutSizeInCells = layoutSizeInCells;
+    }
+
+    /* Worker*/
+    /**
+     * Returns a pseudo-random number between min and max, inclusive.
+     * The difference between min and max can be at most
+     * <code>Integer.MAX_VALUE - 1</code>.
+     *
+     * @param min Minimum value
+     * @param max Maximum value.  Must be greater than min.
+     * @return Integer between min and max, inclusive.
+     * @see java.util.Random#nextInt(int)
+     */
+    public static int randInt(int min, int max) {
+
+        // Usually this can be a field rather than a method variable
+        Random rand = new Random();
+
+        // nextInt is normally exclusive of the top value,
+        // so add 1 to make it inclusive
+        int randomNum = rand.nextInt((max - min) + 1) + min;
+
+        return randomNum;
     }
 }

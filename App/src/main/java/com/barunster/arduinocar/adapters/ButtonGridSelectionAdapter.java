@@ -64,7 +64,7 @@ public class ButtonGridSelectionAdapter extends BaseAdapter {
             buttonImage.setSize(4);
             buttonImage.setOrientation(LinearLayout.HORIZONTAL);
             buttonImage.setType(CustomButton.buttonTags.get(position));
-            buttonImage.setDimensions(new int[]{ 2, 4});
+            buttonImage.setDimensions(new int[]{ 1, 4});
         }
         else if (position == 2)
         {

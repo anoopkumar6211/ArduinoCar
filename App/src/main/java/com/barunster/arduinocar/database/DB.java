@@ -45,9 +45,17 @@ public class DB   {
 
                 + Column.SIZE + TYPE_I + COMMA_SEP
 
+                + Column.ROWS + TYPE_I + COMMA_SEP
+
+                + Column.COLUMNS + TYPE_I + COMMA_SEP
+
                 + Column.ORIENTATION + TYPE_I + COMMA_SEP
 
                 + Column.POSITION + TYPE_I + COMMA_SEP
+
+                + Column.START_POS_ROW + TYPE_I + COMMA_SEP
+
+                + Column.START_POS_COLUMN + TYPE_I + COMMA_SEP
 
                 + Column.CENTER_AFTER_DROP + TYPE_I + COMMA_SEP
 
@@ -105,6 +113,8 @@ public class DB   {
         public static final String CHANNEL = "_channel";
         public static final String ROWS = "_rows";
         public static final String COLUMNS = "_columns";
+        public static final String START_POS_ROW = "_start_pos_row";
+        public static final String START_POS_COLUMN = "_start_pos_column";
         public static final String EXTRA_SPEED_DATA = "_extra_speed_data";
         public static final String CENTER_AFTER_DROP = "_center_after_drop";
         public static final String SHOW_MARKS = "_show_marks";

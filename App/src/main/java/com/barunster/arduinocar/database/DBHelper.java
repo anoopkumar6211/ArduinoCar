@@ -10,7 +10,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	
 	public static final String DATABASE_NAME = "Custom_Controllers_DB";
 	
-	private static int DATABASE_VERSION = 7;
+	private static int DATABASE_VERSION = 8;
 	
 	public DBHelper(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);

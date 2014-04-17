@@ -3,11 +3,13 @@ package com.barunster.arduinocar.fragments.top_menu;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -36,6 +38,9 @@ public class SelectControllerFragment extends MenuFragment {
     private ArduinoCarAppObj app;
 
     private List<CustomController> controllerList;
+
+    private static final int MIN_COL_ROWS = 2;
+    private static final int MAX_COL_ROWS = 10;
 
     /*Views*/
     private View mainView;
@@ -70,13 +75,18 @@ public class SelectControllerFragment extends MenuFragment {
         pickRows = (NumberPicker) mainView.findViewById(R.id.picker_rows);
         pickColumns = (NumberPicker) mainView.findViewById(R.id.picker_columns);
 
-        pickRows.setMinValue(2);
-        pickRows.setMaxValue(5);
+        // Pickers Settings.
+        pickRows.setMinValue(MIN_COL_ROWS);
+        pickRows.setMaxValue(MAX_COL_ROWS);
         pickRows.setValue(pickRows.getMinValue());
 
-        pickColumns.setMinValue(2);
-        pickColumns.setMaxValue(5);
+        pickColumns.setMinValue(MIN_COL_ROWS);
+        pickColumns.setMaxValue(MAX_COL_ROWS);
         pickColumns.setValue(pickRows.getMinValue());
+
+        // Set Done Button on the keyboard for the edit text
+        etControllerName.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        etControllerName.setSingleLine();
 
         btnAddController.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -88,7 +98,7 @@ public class SelectControllerFragment extends MenuFragment {
                     return;
                 }
 
-                long id = app.getCustomDBManager().getControllersDataSource().addController(new CustomController(
+                long id = app.getCustomDBManager().addController(new CustomController(
                         ((EditText) mainView.findViewById(R.id.edit_enter_controller_name)).getText().toString(),
                         pickRows.getValue(), pickColumns.getValue()
                 ));
@@ -135,7 +145,7 @@ public class SelectControllerFragment extends MenuFragment {
                 txt.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        app.getCustomDBManager().getControllersDataSource().deleteControllerById(controllerList.get(position).getId());
+                        app.getCustomDBManager().deleteControllerById(controllerList.get(position).getId());
                         deleteControllerPopup.dismiss();
                         refreshList();
                         ((MainActivity)getActivity()).onControllerSelected(controllerList.get(position - 1 < 0 ? 0 : position - 1  ).getId());

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
+import com.barunster.arduinocar.custom_controllers_obj.CustomCommand;
 import com.barunster.arduinocar.custom_controllers_obj.CustomController;
 
 import java.util.ArrayList;
@@ -18,22 +19,33 @@ public class CustomDBManager {
     private static final String TAG = CustomDBManager.class.getSimpleName();
     private static final boolean DEBUG = false;
 
+    private static CustomDBManager instance;
+
     private CustomCommandsDataSource customCommandsDataSource;
     private ControllersDataSource controllersDataSource;
     private CustomButtonsDataSource customButtonsDataSource;
+    private OnControllerDateChanged onControllerDateChanged;
 
+    public static CustomDBManager getInstance(){
+        if (instance == null)
+            throw new NullPointerException("Custom DB Manager is not initialized");
+
+        return instance;
+    }
     private List<CustomButton> customButtonList = new ArrayList<CustomButton>();
 
     public CustomDBManager(Context context){
+        if (instance != null)
+            throw new ExceptionInInitializerError("Custom DB already has an instance");
+
         customButtonsDataSource = new CustomButtonsDataSource(context);
         controllersDataSource = new ControllersDataSource(context);
         customCommandsDataSource = new CustomCommandsDataSource(context);
+
+        instance = this;
     }
 
-    public CustomCommandsDataSource getCustomCommandsDataSource() {
-        return customCommandsDataSource;
-    }
-
+    /* Controller */
     public CustomController getControllerById(long id ){
 
         customButtonList = new ArrayList<CustomButton>();
@@ -45,8 +57,8 @@ public class CustomDBManager {
 
         for (CustomButton btn : customButtonsDataSource.getButtonsByControllerId(id)) {
             // Adding the command of the button if has any.
-            if (customCommandsDataSource.getCommandByButtonId(btn.getId()) != null) {
-                btn.setCustomCommand(customCommandsDataSource.getCommandByButtonId(btn.getId()));
+            if (getCommandByButtonId((int) btn.getId()) != null) {
+                btn.setCustomCommand(getCommandByButtonId( (int) btn.getId()) );
 
                 if (DEBUG)
                     Log.i(TAG, "Button has command");
@@ -88,11 +100,66 @@ public class CustomDBManager {
 
         return result;
     }
+
+    public long addController(CustomController customController){
+        return controllersDataSource.addController(customController);
+    }
+
+    public void deleteControllerById(long id) {
+        controllersDataSource.deleteControllerById(id);
+    }
+
+    /* Button */
+    public CustomButton getButtonById(long buttonId) {
+        return customButtonsDataSource.getButtonByButtonId(buttonId);
+    }
+
+    public long addButton(CustomButton customButton){
+        return customButtonsDataSource.addButton(customButton);
+    }
+
+    public boolean deleteButtonById(long id){
+        return customButtonsDataSource.deleteButtonById(id);
+    }
+
+    public int updateButtonById(long id, CustomButton customButton){
+        return customButtonsDataSource.updateButtonById(id, customButton);
+    }
+
+    /* Command */
+    public CustomCommand getCommandByButtonId(int buttonId) {
+        return customCommandsDataSource.getCommandByButtonId(buttonId);
+    }
+
+    public void addCommand(CustomCommand customCommand) {
+        customCommandsDataSource.addCommand(customCommand);
+    }
+
+    /*
     public ControllersDataSource getControllersDataSource() {
         return controllersDataSource;
     }
 
     public CustomButtonsDataSource getCustomButtonsDataSource() {
         return customButtonsDataSource;
+
+    public CustomCommandsDataSource getCustomCommandsDataSource() {
+        return customCommandsDataSource;
+    }
+
+
+    }*/
+
+    public interface OnControllerDateChanged{
+        public void onChanged();
+    }
+
+    public void setOnControllerDateChanged(OnControllerDateChanged onControllerDateChanged) {
+        this.onControllerDateChanged = onControllerDateChanged;
+    }
+
+    private void dispatchControllerChangedEvent(){
+        if (onControllerDateChanged != null)
+            onControllerDateChanged.onChanged();
     }
 }

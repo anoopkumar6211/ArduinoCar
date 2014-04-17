@@ -1,3 +1,4 @@
+/*
 package com.barunster.arduinocar.fragments.not_used;
 
 import android.graphics.Color;
@@ -16,16 +17,20 @@ import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
 import com.barunster.arduinocar.not_used.ServoSemiCircle;
 import com.barunster.arduinocar.views.SlideButtonLayout;
 
+*/
 /**
  * Created by itzik on 3/10/14.
- */
+ *//*
+
 public class ServoControlFragment extends ArduinoLegoFragment {
 
     private static final String TAG = ServoControlFragment.class.getSimpleName();
 
     private ArduinoCarAppObj app;
 
-    /* Views*/
+    */
+/* Views*//*
+
     private RelativeLayout mainView;
     private ServoSemiCircle servoSemiCircle;
     private SlideButtonLayout slideButton;
@@ -73,10 +78,12 @@ public class ServoControlFragment extends ArduinoLegoFragment {
                 app.getConnection().write( ((TextView)mainView.findViewById(R.id.linear_channels).getTag()).getText() + String.valueOf(direction) + String.valueOf(speed));
             }
         });
-        /*ImageView servoBack = (ImageView) mainView.findViewById(R.id.imageView);
+        */
+/*ImageView servoBack = (ImageView) mainView.findViewById(R.id.imageView);
         servoSemiCircle = new ServoSemiCircle(Color.WHITE, ServoSemiCircle.Direction.TOP, 500);
 //        servoSemiCircle.setBounds(100,100,100,100);
-        servoBack.setImageDrawable(servoSemiCircle);*/
+        servoBack.setImageDrawable(servoSemiCircle);*//*
+
 
         return mainView;
     }
@@ -125,3 +132,4 @@ public class ServoControlFragment extends ArduinoLegoFragment {
         super.onConnected();
     }
 }
+*/

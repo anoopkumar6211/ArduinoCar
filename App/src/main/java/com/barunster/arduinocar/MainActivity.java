@@ -95,7 +95,7 @@ public class MainActivity extends FragmentActivity {
         getDisplaySize();
 
         if (savedInstanceState == null) {
-            createFragment(ArduinoLegoFragment.FRAGMENT_TYPE_CUSTOM_CONTROLLER);
+            createFragment(ArduinoLegoFragment.FRAGMENT_TYPE_MULTIPLE); // TODO change to custom controller fragment
         }
         else
         {

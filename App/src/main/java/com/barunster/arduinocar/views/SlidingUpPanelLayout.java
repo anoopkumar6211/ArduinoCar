@@ -88,7 +88,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
     /**
      * True if the collapsed panel should be dragged up.
      */
-    private boolean mIsSlidingUp;
+    private boolean mIsSlidingUp = true; // Changed to true so default will be from bottom.
 
     /**
      * True if a panel can slide with the current measurements
