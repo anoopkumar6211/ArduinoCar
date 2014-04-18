@@ -6,7 +6,6 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.barunster.arduinocar.database.CustomDBManager;
-import com.barunster.arduinocar.interfaces.BottomMenuGateKeeper;
 import com.barunster.arduinocar.views.SlideButtonLayout;
 
 import braunster.btconnection.BTConnection;
@@ -15,7 +14,7 @@ import braunster.btconnection.Command;
 /**
  * Created by itzik on 4/17/2014.
  */
-public class CommandsExecutor implements View.OnClickListener, SlideButtonLayout.SlideButtonListener, AccelerometerHandler.AccelerometerEventListener {
+public class CommandsExecutor implements View.OnClickListener, SlideButtonLayout.SlideButtonListener, AccelerometerHandler.AccelerometerEventListener , CustomDBManager.OnControllerDataChanged{
 
     private static final String TAG = CommandsExecutor.class.getSimpleName();
     private static final boolean DEBUG = true;
@@ -32,12 +31,7 @@ public class CommandsExecutor implements View.OnClickListener, SlideButtonLayout
 
         customController = customControllerManager.getControllerById(controllerId);
 
-        customControllerManager.setOnControllerDateChanged(new CustomDBManager.OnControllerDateChanged() {
-            @Override
-            public void onChanged() {
-                customController = customControllerManager.getControllerById(controllerId);
-            }
-        });
+        customControllerManager.setOnControllerDateChanged(this);
     }
 
     public Context getContext() {
@@ -48,6 +42,10 @@ public class CommandsExecutor implements View.OnClickListener, SlideButtonLayout
         this.controllerId = controllerId;
 
         customController = customControllerManager.getControllerById(controllerId);
+    }
+
+    public void setConnection(BTConnection connection) {
+        this.connection = connection;
     }
 
     @Override
@@ -128,7 +126,7 @@ public class CommandsExecutor implements View.OnClickListener, SlideButtonLayout
         if (DEBUG)
             Log.d(TAG, "onSlideStop");
 
-        else if ( customController.getCustomButtonById(slideButtonLayout.getId()) != null && customController.getCustomButtonById(slideButtonLayout.getId()).getCustomCommand() != null)
+        if ( customController.getCustomButtonById(slideButtonLayout.getId()) != null && customController.getCustomButtonById(slideButtonLayout.getId()).getCustomCommand() != null)
         {
             CustomCommand customCommand = customController.getCustomButtonById(slideButtonLayout.getId()).getCustomCommand();
 
@@ -274,5 +272,10 @@ public class CommandsExecutor implements View.OnClickListener, SlideButtonLayout
     public void onChangeDeltas(float[] deltas) {
         if (DEBUG)
             Log.d(TAG, "onChangeDeltas");
+    }
+
+    @Override
+    public void onChanged() {
+//        customController = customControllerManager.getControllerById(controllerId);
     }
 }

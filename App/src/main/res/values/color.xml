@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="drop_zone_shadow">#801B4CD1</color>
+    <color name="drop_zone_ok_for_drop">#8052FF57</color>
+    <color name="drop_zone_cant_drop">#80FF002F</color>
+
+
+    <!-- Brick Background's-->
+    <color name="brick_background_1">#00B3ED</color>
+    <color name="brick_background_2">#CFB50C</color>
+    <color name="brick_background_3">#0C10CF</color>
+    <color name="brick_background_4">#BA0000</color>
+    <color name="brick_background_5">#35BA00</color>
+    <color name="brick_background_6">#5D00BA</color>
+    <color name="brick_background_7">#BA7F00</color>
+</resources>

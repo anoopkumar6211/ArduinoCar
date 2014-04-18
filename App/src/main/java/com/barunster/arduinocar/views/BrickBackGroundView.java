@@ -192,17 +192,20 @@ public class BrickBackGroundView extends View {
 
         boolean rowOk = true;
 
-        for (int i = start ; i < end ; i++)
-        {
-            if (DEBUG)
-                Log.d(TAG, "Checked Brick; " + i);
-
-            if (bricksState[row][i])
+        if (end > columnsAmount)
+            rowOk = false;
+        else
+            for (int i = start ; i < end ; i++)
             {
-                rowOk = false;
-                break;
+                if (DEBUG)
+                    Log.d(TAG, "Checked Brick; " + i);
+
+                if (bricksState[row][i])
+                {
+                    rowOk = false;
+                    break;
+                }
             }
-        }
 
         return rowOk;
     }
@@ -242,7 +245,7 @@ public class BrickBackGroundView extends View {
         this.invalidate();
     }
     /** Mark brick as full by changing their positon in "brickState" to true.*/
-    private void markBricksAsFull(int[] startBrickPos, int[] dimensions){
+    public void markBricksAsFull(int[] startBrickPos, int[] dimensions){
 
         // Running on the rows
         for (int i = startBrickPos[ControllerLayout.ROW] ; i < startBrickPos[ControllerLayout.ROW] + dimensions[ControllerLayout.ROW] ; i++)
@@ -271,12 +274,13 @@ public class BrickBackGroundView extends View {
             {
                 case DragEvent.ACTION_DRAG_LOCATION:
                     // Drag is hovering above a new and valid brick.
-                    if ( (lastBrick[ControllerLayout.ROW] != currentBrick[ControllerLayout.ROW] || lastBrick[ControllerLayout.COLUMN] != currentBrick[ControllerLayout.COLUMN]) &&
-                            ( currentBrick[ControllerLayout.ROW] != -1 && currentBrick[ControllerLayout.COLUMN] != -1 ))
+                    if  ( currentBrick[ControllerLayout.ROW] != -1 && currentBrick[ControllerLayout.COLUMN] != -1 )
                     {
-//                    lastBrick = currentBrick;
+                        // Check if there was a change from the last pos so the app wont redraw the same highlight.
+                        if (drawDropZoneShadow && lastBrick[ControllerLayout.ROW] == currentBrick[ControllerLayout.ROW] && lastBrick[ControllerLayout.COLUMN] == currentBrick[ControllerLayout.COLUMN] )
+                            return true;
 
-                        if (DEBUG)
+                            if (DEBUG)
                             Log.d(TAG, "Brick, Row: " + currentBrick[ControllerLayout.ROW] + ", Column: " + currentBrick[ControllerLayout.COLUMN]);
 
                         // Get the most left brick that the shadows is upon
@@ -295,6 +299,22 @@ public class BrickBackGroundView extends View {
                     // If the current position isn't Valid and a frame is drawn redraw the view without the highlight.
                     else if (drawDropZoneShadow)
                     {
+                        if (DEBUG)
+                            Log.d(TAG, "Hiding old highlight");
+
+                        drawDropZoneShadow = false;
+                        canDropShadow = false;
+
+                        BrickBackGroundView.this.invalidate();
+                    }
+                    break;
+
+                case DragEvent.ACTION_DRAG_EXITED:
+                    if (drawDropZoneShadow)
+                    {
+                        if (DEBUG)
+                            Log.d(TAG, "Hiding old highlight");
+
                         drawDropZoneShadow = false;
                         canDropShadow = false;
 
@@ -329,6 +349,8 @@ public class BrickBackGroundView extends View {
 
                     break;
             }
+
+            lastBrick = currentBrick;
 
             return true;
         }

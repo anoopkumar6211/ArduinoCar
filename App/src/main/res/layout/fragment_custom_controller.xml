@@ -21,12 +21,12 @@
             android:orientation="vertical"
             >
 
-            <com.barunster.arduinocar.views.ControllerLayout
+            <com.barunster.arduinocar.views.FramesControllerLayout
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:id="@+id/controller_layout"
                 android:tag="@string/tag_animation_assigned"
-               ></com.barunster.arduinocar.views.ControllerLayout>
+               ></com.barunster.arduinocar.views.FramesControllerLayout>
 \
         </LinearLayout>
 

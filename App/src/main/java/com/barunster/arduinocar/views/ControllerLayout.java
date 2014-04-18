@@ -9,27 +9,35 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import com.barunster.arduinocar.R;
 import com.barunster.arduinocar.adapters.ButtonGridSelectionAdapter;
+import com.barunster.arduinocar.adapters.RadioGroupGridAdapter;
 import com.barunster.arduinocar.custom_controllers_obj.CommandsExecutor;
 import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
+import com.barunster.arduinocar.custom_controllers_obj.CustomCommand;
 import com.barunster.arduinocar.custom_controllers_obj.CustomController;
 import com.barunster.arduinocar.custom_controllers_obj.ImageDragShadowBuilder;
-import com.barunster.arduinocar.interfaces.BottomMenuGateKeeper;
-import com.barunster.arduinocar.interfaces.BottomMenuInterface;
+import com.barunster.arduinocar.database.CustomDBManager;
 import com.barunster.arduinocar.interfaces.ControllerInterface;
 import com.barunster.arduinocar.interfaces.ControllerLayoutEventListener;
+import com.barunster.arduinocar.interfaces.MenuGateKeeper;
+import com.barunster.arduinocar.views.edit_command.ChannelsView;
+import com.barunster.arduinocar.views.edit_command.CommandsSelectionGrid;
 
 import braunster.btconnection.BTConnection;
 
 /**
  * Created by itzik on 4/13/2014.
  */
-public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenuInterface, ControllerInterface,View.OnClickListener, View.OnLongClickListener {
+public class ControllerLayout extends SlidingUpPanelLayout implements
+        ControllerInterface,View.OnClickListener, View.OnLongClickListener {
 
     public static final int WIDTH = 0;
     public static final int HEIGHT = 1;
@@ -57,6 +65,7 @@ public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenu
     public static final float BOTTOM_MENU_OFFSET_FULL = 0.5f;
 
     private View slidePanelMain;// The main view for the sliding up panel.
+    private LinearLayout liBottomMenu, liButtonGrid, liButtonCommand;
     private int paneHeight, brickSize;
 
     /* Controller */
@@ -91,7 +100,6 @@ public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenu
 
     private void init(){
         calcBrickSize();
-
         commandsExecutor = new CommandsExecutor(getContext(), connection);
     }
 
@@ -148,68 +156,82 @@ public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenu
     }
 
     private View initBottomMenu(){
-        LinearLayout linearLayout = new LinearLayout(getContext());
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        linearLayout.setLayoutParams(new SlidingUpPanelLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        linearLayout.setWeightSum(9);
+        liBottomMenu = new LinearLayout(getContext());
+        liBottomMenu.setOrientation(LinearLayout.VERTICAL);
+        liBottomMenu.setLayoutParams(new SlidingUpPanelLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        liBottomMenu.setWeightSum(9);
 
-        linearLayout.addView(initMenuButtons());
+        liBottomMenu.addView(initMenuButtons());
 
         /* Add Button - Buttons Grid*/
-        View view = initButtonGridView();
+        liButtonGrid = (LinearLayout) initButtonGridView();
         LinearLayout.LayoutParams viewParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        viewParams.weight = 4;
-        view.setLayoutParams(viewParams);
+        viewParams.weight = 0.5f;
+        liButtonGrid.setLayoutParams(viewParams);
 
-        linearLayout.addView(view);
+        /* Add Button - Buttons Grid*/
+        liButtonCommand = (LinearLayout) initButtonCommandView();
+        LinearLayout.LayoutParams commandParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        viewParams.weight = 0.5f;
+        liButtonCommand.setLayoutParams(commandParams);
 
-        return linearLayout;
+        liBottomMenu.addView(liButtonGrid);
+
+        return liBottomMenu;
     }
 
     private LinearLayout initMenuButtons(){
         if (addBtn == null)
         {
+            int BTN_PADDING = 10;
             LinearLayout linearLayout = new LinearLayout(getContext());
             linearLayout.setOrientation(LinearLayout.HORIZONTAL);
             LinearLayout.LayoutParams linearParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             linearParams.weight = 8;
             linearLayout.setLayoutParams(linearParams);
+//            linearLayout.setPadding(BTN_PADDING, BTN_PADDING,BTN_PADDING,BTN_PADDING);
 
             // Button Params.
-            LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            btnParams.weight = 1;
+            LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(paneHeight, paneHeight);
 
-        /* Add Button */
+            /* Add Button */
             addBtn = new Button(getContext());
             addBtn.setLayoutParams(btnParams);
-            addBtn.setText("Add");
+//            addBtn.setPadding(BTN_PADDING, BTN_PADDING, BTN_PADDING, BTN_PADDING);
+            addBtn.setBackgroundResource(R.drawable.add_button_selector);
             addBtn.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    gateKeeper.openMenu();
+                    gateKeeper.openMenu(BOTTOM_MENU_OFFSET_FULL);
                     isEditing = false;
                     editBtn.setSelected(false);
+                    openButtonGridView();
                 }
             });
 
-        /* Edit Button */
+            /* Edit Button */
             editBtn = new Button(getContext());
             editBtn.setLayoutParams(btnParams);
-            editBtn.setText("Edit");
+//            editBtn.setPadding(BTN_PADDING, BTN_PADDING, BTN_PADDING, BTN_PADDING);
+            editBtn.setBackgroundResource(R.drawable.edit_button_selector);
             editBtn.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    v.setSelected(!v.isSelected());
+                    isEditing = v.isSelected();
+
                     gateKeeper.closeMenu();
-                    isEditing = true;
-                    v.setSelected(true);
                 }
             });
 
-        /* Edit Button */
+             /* Close Button */
+            LinearLayout.LayoutParams cancelParams = new LinearLayout.LayoutParams(paneHeight, paneHeight);
+            cancelParams.gravity = Gravity.CENTER;
             closeBtn = new Button(getContext());
-            closeBtn.setLayoutParams(btnParams);
-            closeBtn.setText("Close");
+            closeBtn.setLayoutParams(cancelParams);
             closeBtn.setVisibility(INVISIBLE);
+//            closeBtn.setPadding(BTN_PADDING,BTN_PADDING,BTN_PADDING,BTN_PADDING);
+            closeBtn.setBackgroundResource(R.drawable.close_button_selector);
             closeBtn.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -221,6 +243,12 @@ public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenu
             linearLayout.addView(editBtn);
             linearLayout.addView(closeBtn);
 
+//            linearLayout.post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    addBtn.setHeight();
+//                }
+//            })
             return linearLayout;
         }
 
@@ -265,6 +293,139 @@ public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenu
         return mainView;
     }
 
+    private View initButtonCommandView(){
+        return  ((LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE) ).inflate(R.layout.layout_edit_button, null);
+    }
+
+    private void openButtonCommandView(final CustomButton customButton,final View v){
+
+        if (customButton == null)
+        {
+            throw new NullPointerException("can open command view for button, button is null");
+        }
+
+        // Removing the Button Grid View if needed.
+        if (liBottomMenu.getChildAt(1).equals(liButtonGrid))
+        {
+            liBottomMenu.removeView(liButtonGrid);
+            liBottomMenu.addView(liButtonCommand);
+        }
+
+        // If the button already has command show the command channel
+        if (customButton.getCustomCommand() != null)
+        {
+            if (DEBUG)
+                Log.d(TAG, "openButtonCommandView, Button has command.");
+            ((ChannelsView)liButtonCommand.findViewById(R.id.linear_channels)).setSelectedChannel(customButton.getCustomCommand().getChannel());
+        }
+
+        /* Select the proper command list by the button type.*/
+        switch (customButton.getType())
+        {
+            case CustomButton.BUTTON_TYPE_SIMPLE:
+                liButtonCommand.findViewById(R.id.linear_slide_data).setVisibility(View.GONE);
+                break;
+
+            case CustomButton.BUTTON_TYPE_SLIDE_HORIZONTAL:
+                liButtonCommand.findViewById(R.id.linear_slide_data).setVisibility(View.VISIBLE);
+
+                ((CheckBox)liButtonCommand.findViewById(R.id.check_show_marks)).setChecked(customButton.showMarks());
+                ((CheckBox)liButtonCommand.findViewById(R.id.check_auto_center)).setChecked(customButton.centerAfterDrop());
+                break;
+
+            case CustomButton.BUTTON_TYPE_SLIDE_VERTICAL:
+                liButtonCommand.findViewById(R.id.linear_slide_data).setVisibility(View.VISIBLE);
+                ((CheckBox)liButtonCommand.findViewById(R.id.check_show_marks)).setChecked(customButton.showMarks());
+                ((CheckBox)liButtonCommand.findViewById(R.id.check_auto_center)).setChecked(customButton.centerAfterDrop());
+                break;
+        }
+
+        ((CommandsSelectionGrid) liButtonCommand.findViewById(R.id.grid_radio_group)).initForButton(customButton);
+
+        // Listen to command selection.
+        ((CommandsSelectionGrid) liButtonCommand.findViewById(R.id.grid_radio_group)).setRadioCheckChangedListener(new RadioGroupGridAdapter.RadioCheckedListener() {
+            @Override
+            public void onRadioChecked(int id) {
+                // If command is speed up/down show the extra speed data editText.
+                if (id == CustomCommand.TYPE_SPEED_DOWN || id == CustomCommand.TYPE_SPEED_UP)
+                {
+                    liButtonCommand.findViewById(R.id.et_command_extra).setVisibility(View.VISIBLE);
+                    ((EditText) liButtonCommand.findViewById(R.id.et_command_extra)).setHint("Enter the amount to speed up/down");
+                }
+                else
+                {
+                    liButtonCommand.findViewById(R.id.et_command_extra).setVisibility(View.GONE);
+                }
+            }
+        });
+
+        // Submit Button
+        liButtonCommand.findViewById(R.id.btn_submit).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Check if there's a command selected in the grid.
+                if (((CommandsSelectionGrid) liButtonCommand.findViewById(R.id.grid_radio_group)).getRadioGroupGridAdapter().getSelectedButton() != null)
+                {
+                    int commandType = ((CommandsSelectionGrid) liButtonCommand.findViewById(R.id.grid_radio_group)).getRadioGroupGridAdapter().getSelectedButton().getId();
+                    CustomCommand customCommand = new CustomCommand(customButton.getId(),
+                            commandType,
+                            ((ChannelsView)liButtonCommand.findViewById(R.id.linear_channels)).getSelectedChannel());
+
+                    // Adding the speed data if needed.
+                    if (liButtonCommand.findViewById(R.id.et_command_extra).getVisibility() == View.VISIBLE) {
+                        if (((EditText) liButtonCommand.findViewById(R.id.et_command_extra)).getText().toString().isEmpty()) {
+                            Toast.makeText(getContext(), "Please enter extra data", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        else
+                            customCommand.setExtraSpeedData(Integer.parseInt(((EditText) liButtonCommand.findViewById(R.id.et_command_extra)).getText().toString()));
+                    }
+
+                    // Add the command to the database.
+                    CustomDBManager.getInstance().addCommand(customCommand);
+                    // Add the command to the button.
+                    customButton.setCustomCommand(customCommand);
+
+                    // Adding new data to the button if needed. else refresh the button so new command type will be applied.
+                    if (liButtonCommand.findViewById(R.id.linear_slide_data).getVisibility() == View.VISIBLE)
+                    {
+                        // Change the custom button settings.
+                        customButton.setShowMarks( ((CheckBox)liButtonCommand.findViewById(R.id.check_show_marks)).isChecked() );
+                        customButton.setCenterAfterDrop( ((CheckBox) liButtonCommand.findViewById(R.id.check_auto_center)).isChecked());
+                        CustomDBManager.getInstance().updateButtonById(customButton);
+
+                        customController.removeButtonById(customButton.getId());
+                        customController.getButtons().add(customButton);
+
+                        // Recreate the controller TODO refresh only relevant button and not the whole layout.
+                        setController(customController);
+
+                    }
+                    else
+                    {
+                        // Changing the button command type. (The Button Drawable Resource will be changed.)
+                        ((SimpleButton) v).setCommandType(commandType);
+                    }
+
+                    // Closing the bottom menu and exiting edit mode.
+                    gateKeeper.closeMenu();
+                }
+                else
+                    Toast.makeText(getContext(), "Please select a command", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void openButtonGridView(){
+
+        // Removing the Button Grid View if needed.
+        if (liBottomMenu.getChildAt(1).equals(liButtonCommand))
+        {
+            liBottomMenu.removeView(liButtonCommand);
+            liBottomMenu.addView(liButtonGrid);
+        }
+    }
+
     private int calcBrickSize(){
         // TODO calc the brick size
         brickSize = MIN_BRICK_SIZE;
@@ -272,14 +433,12 @@ public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenu
     }
 
     /* Interfaces */
-    @Override
-    public void openMenu() {
+    private void openMenu(float offset) {
         closeBtn.setVisibility(VISIBLE);
-        this.expandPane(BOTTOM_MENU_OFFSET_FULL);
+        this.expandPane(offset);
     }
 
-    @Override
-    public void closeMenu() {
+    private void closeMenu() {
         closeBtn.setVisibility(INVISIBLE);
         this.collapsePane();
     }
@@ -303,6 +462,7 @@ public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenu
     @Override
     public void setOutputConnection(BTConnection connection) {
         this.connection = connection;
+        commandsExecutor.setConnection(connection);
     }
 
     /* Dispatch Event*/
@@ -314,13 +474,20 @@ public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenu
             Log.e(TAG, "no Controller Layout Event Listener");
     }
 
+    void dispatchButtonChangedEvent(CustomButton customButton, View view){
+        if (controllerLayoutEventListener != null)
+            controllerLayoutEventListener.onButtonChanged(customButton, view);
+        else if (DEBUG)
+            Log.e(TAG, "no Controller Layout Event Listener");
+    }
+
     /* Getters & Setters*/
 
     public int getBrickSize() {
         return brickSize;
     }
 
-    public BottomMenuGateKeeper getGateKeeper() {
+    public MenuGateKeeper getGateKeeper() {
         return gateKeeper;
     }
 
@@ -336,10 +503,10 @@ public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenu
         this.controllerLayoutEventListener = controllerLayoutEventListener;
     }
 
-    BottomMenuGateKeeper gateKeeper = new BottomMenuGateKeeper() {
+    MenuGateKeeper gateKeeper = new MenuGateKeeper() {
         @Override
-        public void openMenu() {
-            ControllerLayout.this.openMenu();
+        public void openMenu(float offset) {
+            ControllerLayout.this.openMenu(offset);
         }
 
         @Override
@@ -352,7 +519,7 @@ public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenu
     public void onClick(View v) {
 
         if (DEBUG_LISTENERS)
-            Log.d(TAG, "OnClick");
+            Log.d(TAG, "OnClick, View id: " + v.getId());
 
         if (customController == null) {
             if(DEBUG_LISTENERS)
@@ -362,11 +529,15 @@ public class ControllerLayout extends SlidingUpPanelLayout implements BottomMenu
 
         if (isEditing)
         {
-            // TODO show the button data.
-            gateKeeper.openMenu();
+
+            if (DEBUG_LISTENERS)
+                Log.d(TAG, "custom controller buttons size = " + customController.getButtons().size());
+
+            openButtonCommandView(customController.getCustomButtonById(v.getId()), v);
+
+            gateKeeper.openMenu(BOTTOM_MENU_OFFSET_FULL);
         }
         else commandsExecutor.onClick(v);
-
     }
 
     @Override

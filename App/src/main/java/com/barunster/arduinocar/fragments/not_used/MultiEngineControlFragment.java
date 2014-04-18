@@ -69,8 +69,8 @@ public class MultiEngineControlFragment extends ArduinoLegoFragment {
             @Override
             public void onButtonAdded(CustomButton customButton, View view) {
                 // Adding the button to the database and setting the view id to the id from the database.
-                view.setId((int) app.getCustomDBManager().addButton(customButton));
-                Log.d(TAG, "Button Added, id: " + view.getId());
+//                view.setId((int) app.getCustomDBManager().addButton(customButton));
+//                Log.d(TAG, "Button Added, id: " + view.getId());
             }
 
             @Override
@@ -148,10 +148,7 @@ public class MultiEngineControlFragment extends ArduinoLegoFragment {
     @Override
     public void onControllerSelected(long id) {
         super.onControllerSelected(id);
-
-//        if (CustomDBManager.getInstance() == null)
-//            new CustomDBManager(getActivity());
-
+        controllerLayout.setOutputConnection(app.getConnection());
         controllerLayout.setController(CustomDBManager.getInstance().getControllerById(id));
     }
 

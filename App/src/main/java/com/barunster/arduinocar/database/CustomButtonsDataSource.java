@@ -243,23 +243,35 @@ public class CustomButtonsDataSource {
 
     }
 
-    public int updateButtonById(long id, CustomButton customButton){
+    public int updateButtonById(CustomButton customButton){
 
         open();
 
         // set value that will be inserted the row
         ContentValues values = new ContentValues();
 
-        // Name and Type
         values.put(allColumns[1], customButton.getControllerId());
         values.put(allColumns[2], customButton.getType());
-        values.put(allColumns[3], customButton.getSize());
-        values.put(allColumns[4], customButton.getOrientation());
-        values.put(allColumns[5], customButton.getPosition());
-        values.put(allColumns[6], DBHelper.fromBooleanToInt(customButton.centerAfterDrop()) );
-        values.put(allColumns[7], DBHelper.fromBooleanToInt(customButton.showMarks()));
+        values.put(allColumns[6], customButton.getOrientation());
 
-        int affectedRows = db.update(DB.Table.T_CUSTOM_BUTTONS, values, allColumns[0] + " = " + id, null);
+        // If button does not have size use button dimension. This is the separation between FrameControllerLayout buttons to BrickControllerLayout
+        if (customButton.getSize() == 0)
+        {
+            values.put(allColumns[4], customButton.getDimensions()[ControllerLayout.ROW]);
+            values.put(allColumns[5], customButton.getDimensions()[ControllerLayout.COLUMN]);
+            values.put(allColumns[8], customButton.getStartPosition()[ControllerLayout.ROW]);
+            values.put(allColumns[9], customButton.getStartPosition()[ControllerLayout.COLUMN]);
+        }
+        else
+        {
+            values.put(allColumns[3], customButton.getSize());
+            values.put(allColumns[7], customButton.getPosition());
+        }
+
+        values.put(allColumns[10], DBHelper.fromBooleanToInt(customButton.centerAfterDrop()));
+        values.put(allColumns[11], DBHelper.fromBooleanToInt(customButton.showMarks()));
+
+        int affectedRows = db.update(DB.Table.T_CUSTOM_BUTTONS, values, allColumns[0] + " = " + customButton.getId(), null);
 
         close();
 

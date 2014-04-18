@@ -24,7 +24,7 @@ public class CustomDBManager {
     private CustomCommandsDataSource customCommandsDataSource;
     private ControllersDataSource controllersDataSource;
     private CustomButtonsDataSource customButtonsDataSource;
-    private OnControllerDateChanged onControllerDateChanged;
+    private OnControllerDataChanged onControllerDataChanged;
 
     public static CustomDBManager getInstance(){
         if (instance == null)
@@ -119,11 +119,15 @@ public class CustomDBManager {
     }
 
     public boolean deleteButtonById(long id){
-        return customButtonsDataSource.deleteButtonById(id);
+        boolean isDeleted = customButtonsDataSource.deleteButtonById(id);
+        dispatchControllerChangedEvent();
+        return isDeleted;
     }
 
-    public int updateButtonById(long id, CustomButton customButton){
-        return customButtonsDataSource.updateButtonById(id, customButton);
+    public int updateButtonById(CustomButton customButton){
+        int affectedRows= customButtonsDataSource.updateButtonById(customButton);
+        dispatchControllerChangedEvent();
+        return affectedRows;
     }
 
     /* Command */
@@ -132,6 +136,7 @@ public class CustomDBManager {
     }
 
     public void addCommand(CustomCommand customCommand) {
+        dispatchControllerChangedEvent();
         customCommandsDataSource.addCommand(customCommand);
     }
 
@@ -150,16 +155,16 @@ public class CustomDBManager {
 
     }*/
 
-    public interface OnControllerDateChanged{
+    public interface OnControllerDataChanged{
         public void onChanged();
     }
 
-    public void setOnControllerDateChanged(OnControllerDateChanged onControllerDateChanged) {
-        this.onControllerDateChanged = onControllerDateChanged;
+    public void setOnControllerDateChanged(OnControllerDataChanged onControllerDataChanged) {
+        this.onControllerDataChanged = onControllerDataChanged;
     }
 
     private void dispatchControllerChangedEvent(){
-        if (onControllerDateChanged != null)
-            onControllerDateChanged.onChanged();
+        if (onControllerDataChanged != null)
+            onControllerDataChanged.onChanged();
     }
 }

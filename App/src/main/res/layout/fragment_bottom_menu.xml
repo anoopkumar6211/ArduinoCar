@@ -23,24 +23,21 @@
 
             <Button
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
+                android:layout_height="wrap_content"
                 android:text="@string/add_button"
-                android:id="@+id/btn_add_button"
-                android:layout_weight="1" />
+                android:id="@+id/btn_add_button"/>
 
             <Button
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
+                android:layout_height="wrap_content"
                 android:text="@string/edit_button"
-                android:id="@+id/btn_edit_button"
-                android:layout_weight="1"/>
+                android:id="@+id/btn_edit_button"/>
 
             <Button
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
+                android:layout_height="wrap_content"
                 android:text="@string/close"
-                android:id="@+id/btn_close"
-                android:layout_weight="1" />
+                android:id="@+id/btn_close"/>
 
         </LinearLayout>
 

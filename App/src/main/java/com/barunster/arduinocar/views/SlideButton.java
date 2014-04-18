@@ -22,7 +22,7 @@ import java.text.DecimalFormat;
 public class SlideButton extends Button {
 
     private static final String TAG = SlideButton.class.getSimpleName();
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private int orientation = LinearLayout.VERTICAL, speed;
     private float curX = 0, curY  = 0, point, buttonSlidingLength;

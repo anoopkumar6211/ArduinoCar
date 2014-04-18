@@ -8,6 +8,7 @@ import android.widget.FrameLayout;
 
 import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
 import com.barunster.arduinocar.custom_controllers_obj.CustomController;
+import com.barunster.arduinocar.database.CustomDBManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -88,8 +89,11 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
 
     private View addButtonToView(CustomButton customButton){
 
+        // Mark the spave the button takes as full.
+        brickBackGroundView.markBricksAsFull(customButton.getStartPosition(), customButton.getDimensions());
+
         if (DEBUG)
-            Log.i(TAG, "Adding button to the view, id: " + customButton.getId());
+            Log.i(TAG, "Adding button to the view, id: " + customButton.getId() + ", Type: " + customButton.getType());
 
         View view = null;
         SlideButtonLayout slideButtonLayout;
@@ -122,6 +126,7 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
                 button.setOnClickListener(this);
                 button.setOnLongClickListener(this);
 
+                button.setId((int) customButton.getId());
 
                 view = button;
 
@@ -132,7 +137,8 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
             case CustomButton.BUTTON_TYPE_SLIDE_HORIZONTAL:
 
                 slideButtonLayout =
-                        new SlideButtonLayout(getContext(), SlideButtonLayout.SLIDE_HORIZONTALLY, getBrickSize() * customButton.getDimensions()[ROW], customButton.centerAfterDrop(), customButton.showMarks());
+                        new SlideButtonLayout(getContext(), SlideButtonLayout.SLIDE_HORIZONTALLY,
+                                getBrickSize() * customButton.getDimensions()[ROW], customButton.centerAfterDrop(), customButton.showMarks());
 
                 slideButtonLayout.setType(customButton.getType());
 
@@ -142,9 +148,11 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
                 // Adding the margins(real margin and the amount of frames from the side) to the button so it will know how much to slide.
                 slideButtonLayout.setMargins(buttonParams.leftMargin, 0, 0, 0);
 
+                slideButtonLayout.setId((int) customButton.getId());
+
                 slideButtonLayout.setSlideButtonListener(getCommandsExecutor());
                 slideButtonLayout.setOnLongClickListener(this);
-                slideButtonLayout.setOnClickListener(getCommandsExecutor());
+                slideButtonLayout.setOnClickListener(this);
 
                 view = slideButtonLayout;
 
@@ -156,7 +164,8 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
             case CustomButton.BUTTON_TYPE_SLIDE_VERTICAL:
 
                 slideButtonLayout =
-                        new SlideButtonLayout(getContext(), SlideButtonLayout.SLIDE_VERTICALLY, getBrickSize() * customButton.getDimensions()[COLUMN], customButton.centerAfterDrop(), customButton.showMarks());
+                        new SlideButtonLayout(getContext(), SlideButtonLayout.SLIDE_VERTICALLY,
+                                getBrickSize() * customButton.getDimensions()[COLUMN], customButton.centerAfterDrop(), customButton.showMarks());
 
                 slideButtonLayout.setType(customButton.getType());
 
@@ -165,6 +174,8 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
                 // Adding the distance from the top.
                 // Adding the margins(real margin and the amount of frames from the side) to the button so it will know how much to slide.
                 slideButtonLayout.setMargins(0, buttonParams.topMargin, 0, 0);
+
+                slideButtonLayout.setId((int) customButton.getId());
 
                 slideButtonLayout.setSlideButtonListener(getCommandsExecutor());
                 slideButtonLayout.setOnLongClickListener(this);
@@ -191,11 +202,19 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
 
         customButton.setControllerId(customController.getId());
 
-        View view = addButtonToView(customButton);
+        // Adding the button to the database
+        long id = CustomDBManager.getInstance().addButton(customButton);
 
+        // Adding the button view and setting his id to the id of the button in the database.
+        View view = addButtonToView(customButton);
+        view.setId((int) id);
+
+        // Adding it to the buttons view list.
         buttons.add(view);
 
-        dispatchButtonAddedEvent(customButton, view);
+        // Adding the button obj to the custom controller obj and setting the button id.
+        customButton.setId(id);
+        customController.getButtons().add(customButton);
     }
 
     @Override

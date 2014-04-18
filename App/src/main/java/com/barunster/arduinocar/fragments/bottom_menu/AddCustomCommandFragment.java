@@ -89,38 +89,7 @@ public class AddCustomCommandFragment extends MenuFragment {
         if ( ((LinearLayout) mainView.findViewById(R.id.linear_channels)).getChildCount() == 0)
         {
 
-            for (String channel : getResources().getStringArray(R.array.motor_channels))
-            {
-                txtChannel = (TextView) getActivity().getLayoutInflater().inflate(R.layout.simple_text_view, null);
-                txtChannel.setText(channel);
 
-                // If this button dosent have command highlight the first channel.
-                if (customCommand == null && mainView.findViewById(R.id.linear_channels).getTag() == null)
-                {
-                    mainView.findViewById(R.id.linear_channels).setTag(txtChannel);
-                    txtChannel.setTextColor(Color.WHITE);
-                }
-                // If already has command init the channel highlight.
-                else if (customCommand != null && channel.equals(customCommand.getChannel()))
-                {
-                    mainView.findViewById(R.id.linear_channels).setTag(txtChannel);
-                    txtChannel.setTextColor(Color.WHITE);
-                }
-
-                txtChannel.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (v != mainView.findViewById(R.id.linear_channels).getTag()) {
-                            ((TextView) mainView.findViewById(R.id.linear_channels).getTag()).setTextColor(Color.LTGRAY);
-                            ((TextView) v).setTextColor(Color.WHITE);
-                            mainView.findViewById(R.id.linear_channels).setTag(v);
-                        }
-                    }
-                });
-
-                // Add the view
-                ( (LinearLayout) mainView.findViewById(R.id.linear_channels)).addView(txtChannel);
-            }
         }
         else
         {
@@ -225,7 +194,7 @@ public class AddCustomCommandFragment extends MenuFragment {
                         CustomButton customButton = app.getCustomDBManager().getButtonById(buttonId);
                         customButton.setShowMarks( ((CheckBox)mainView.findViewById(R.id.check_show_marks)).isChecked() );
                         customButton.setCenterAfterDrop( ((CheckBox) mainView.findViewById(R.id.check_auto_center)).isChecked());
-                        buttonId = app.getCustomDBManager().updateButtonById(customButton.getId(), customButton);
+                        buttonId = app.getCustomDBManager().updateButtonById(customButton);
 
                         if (buttonId == -1)
                             Log.e(TAG, "Problem adding button to the database.");

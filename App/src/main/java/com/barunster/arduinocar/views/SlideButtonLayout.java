@@ -30,7 +30,7 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
     private static final int NUMBER_OF_SERVO_POSITIONS = 9;
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public static final int SLIDE_HORIZONTALLY = 0;
     public static final int SLIDE_VERTICALLY = 1;
@@ -148,7 +148,7 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
     private void init(){
         // Setting a random color for the background
         TypedArray ta = getContext().getResources().obtainTypedArray(R.array.colors);
-        setBackgroundColor(ta.getColor(randInt(0,7), 0));
+        setBackgroundColor(ta.getColor(randInt(0,6), 0));
         ta.recycle();
 
 
@@ -156,7 +156,6 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
 //        setWillNotDraw(false);
     }
-
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -354,6 +353,10 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
 
         btnSlide.setSize(stickSize);
 
+        /*The slide layout and the button share the same if,
+         *Its for the on click handling and finding the button in the controller layout by this id.*/
+        btnSlide.setId(getId());
+
         addView(btnSlide);
 
         btnSlide.onMeasure(MeasureSpec.makeMeasureSpec(stickSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(stickSize, MeasureSpec.EXACTLY));
@@ -495,6 +498,15 @@ public class SlideButtonLayout extends LinearLayout implements View.OnTouchListe
     }
 
     /* Getters And Setters */
+
+    @Override
+    public void setId(int id) {
+        super.setId(id);
+         /*The slide layout and the button share the same if,
+         *Its for the on click handling and finding the button in the controller layout by this id.*/
+        if (btnSlide != null)
+            btnSlide.setId(id);
+    }
 
     public int getMarginLeft() {
         return marginLeft;

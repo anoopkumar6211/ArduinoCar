@@ -16,4 +16,16 @@
         <item>@string/accelerometer</item>-->
     </string-array>
 
+    <!--Brick Background Colors Array -->
+    <array name="colors">
+        <item>@color/brick_background_1</item>
+        <item>@color/brick_background_2</item>
+        <item>@color/brick_background_3</item>
+        <item>@color/brick_background_4</item>
+        <item>@color/brick_background_5</item>
+        <item>@color/brick_background_6</item>
+        <item>@color/brick_background_7</item>
+
+    </array>
+
 </resources>
