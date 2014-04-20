@@ -6,11 +6,11 @@
 
 
     <!-- Brick Background's-->
-    <color name="brick_background_1">#00B3ED</color>
-    <color name="brick_background_2">#CFB50C</color>
-    <color name="brick_background_3">#0C10CF</color>
-    <color name="brick_background_4">#BA0000</color>
-    <color name="brick_background_5">#35BA00</color>
-    <color name="brick_background_6">#5D00BA</color>
-    <color name="brick_background_7">#BA7F00</color>
+    <color name="brick_background_1">#8000B3ED</color>
+    <color name="brick_background_2">#80CFB50C</color>
+    <color name="brick_background_3">#800C10CF</color>
+    <color name="brick_background_4">#80BA0000</color>
+    <color name="brick_background_5">#8035BA00</color>
+    <color name="brick_background_6">#805D00BA</color>
+    <color name="brick_background_7">#80BA7F00</color>
 </resources>

@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * Created by itzik on 3/27/14.
  */
-public class BrickControllerLayout extends ControllerLayout implements BrickBackGroundView.ButtonAddedListener {
+public class BrickControllerLayout extends ControllerLayout  {
 
     // TODO fix problem with frames and buttons has same id that causes cast errors
 
@@ -84,7 +84,7 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
         frameLayout.setLayoutParams(frameParams);
 
         brickBackGroundView = new BrickBackGroundView(getContext(), getBrickSize());
-        brickBackGroundView.setButtonAddedListener(this);
+        brickBackGroundView.setDropListener(this);
         frameLayout.addView(brickBackGroundView);
 
         mainView.addView(frameLayout);
@@ -200,25 +200,19 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
     /* Implement Methods*/
     @Override
     public void onButtonAdded(CustomButton customButton) {
+        super.onButtonAdded(customButton);
+
         if (DEBUG)
             Log.d(TAG, "onButtonAdded");
 
-        // Button is not new, button just changed his position.
-        if (customButton.getId() != -1){
-            // Updating the database
-            CustomDBManager.getInstance().updateButtonById(customButton);
-        }
-        else
-        {
-            customButton.setControllerId(customController.getId());
+        customButton.setControllerId(customController.getId());
 
-            // Adding the button to the database
-            long id = CustomDBManager.getInstance().addButton(customButton);
+        // Adding the button to the database
+        long id = CustomDBManager.getInstance().addButton(customButton);
 
-            // Adding the button obj to the custom controller obj and setting the button id.
-            customButton.setId(id);
-            customController.getButtons().add(customButton);
-        }
+        // Adding the button obj to the custom controller obj and setting the button id.
+        customButton.setId(id);
+        customController.getButtons().add(customButton);
 
         // Adding the button view and setting his id to the id of the button in the database.
         View view = addButtonToView(customButton);
@@ -226,6 +220,40 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
 
         // Adding it to the buttons view list.
         buttons.add(view);
+    }
+
+    @Override
+    public void onButtonDeleted(CustomButton customButton) {
+        super.onButtonDeleted(customButton);
+
+        if (DEBUG)
+            Log.d(TAG, "onButtonDeleted");
+
+        customController.removeButtonById(customButton.getId());
+
+        CustomDBManager.getInstance().deleteButtonById(customButton.getId());
+
+        deleteFrame.setVisibility(INVISIBLE);
+    }
+
+    @Override
+    public void onButtonChangedPosition(CustomButton customButton) {
+        super.onButtonChangedPosition(customButton);
+
+        if (DEBUG)
+            Log.d(TAG, "onButtonChangedPosition");
+
+        CustomDBManager.getInstance().updateButtonById(customButton);
+
+        // Adding the button view and setting his id to the id of the button in the database.
+        View view = addButtonToView(customButton);
+        view.setId((int) customButton.getId());
+
+        // Adding it to the buttons view list.
+        buttons.add(view);
+
+        // Hiding the delete frame.
+        deleteFrame.setVisibility(INVISIBLE);
     }
 
     @Override
@@ -274,6 +302,8 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
             createDropShadowForImage(v, DropZoneImage.crateDropZoneImageForButton(getContext(), customButton));
 
             mainView.removeView(v);
+
+            deleteFrame.setVisibility(VISIBLE);
         }
 
         return super.onLongClick(v);

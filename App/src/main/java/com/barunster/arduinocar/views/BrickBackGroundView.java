@@ -28,15 +28,14 @@ public class BrickBackGroundView extends View {
 
     private Paint circlePaint, backgroundPaint, dropZoneValidDropPaint, dropZoneInvalidDropPaint;
 
-    private int rowsAmount, columnsAmount, rowsRemainder, columnsRemainder, brickSize;
+    private int rowsAmount = -1, columnsAmount =-1, rowsRemainder, columnsRemainder, brickSize;
     private boolean[][] bricksState;// Keep data if the brick is available or not. false states that the break is empty, true is full.
 
     private boolean drawDropZoneShadow = false, canDropShadow = false;
     private int [] dropZoneShadowCoordinates = new int[2];
     private int [] dropZoneShadowDimensions = new int[2];
 
-    private ButtonAddedListener buttonAddedListener;
-
+    private DropListener dropListener;
 
     public BrickBackGroundView(Context context, int brickSize) {
         super(context);
@@ -72,19 +71,22 @@ public class BrickBackGroundView extends View {
     }
 
     private void calcRowsAndColumnsAmount(){
-        rowsAmount = getMeasuredHeight() / brickSize;
-        columnsAmount = getMeasuredWidth() / brickSize;
+        if (rowsAmount == -1 && columnsAmount == -1)
+        {
+            rowsAmount = getMeasuredHeight() / brickSize;
+            columnsAmount = getMeasuredWidth() / brickSize;
 
-        rowsRemainder = getMeasuredHeight() % brickSize;
-        columnsRemainder = getMeasuredWidth() % brickSize;
+            rowsRemainder = getMeasuredHeight() % brickSize;
+            columnsRemainder = getMeasuredWidth() % brickSize;
 
-        // Init brick state
-        bricksState = new boolean[rowsAmount][columnsAmount];
-        
-        if (DEBUG) {
-            Log.d(TAG, "Height: " + getMeasuredHeight() + ", Width: " + getMeasuredWidth());
-            Log.d(TAG, "Rows Amount: " + rowsAmount + ", Columns Amount: " + columnsAmount);
-            Log.d(TAG, "Rows Remainder: " + rowsRemainder + ", Columns Remainder: " + columnsRemainder);
+            // Init brick state
+            bricksState = new boolean[rowsAmount][columnsAmount];
+
+            if (DEBUG) {
+                Log.d(TAG, "Height: " + getMeasuredHeight() + ", Width: " + getMeasuredWidth());
+                Log.d(TAG, "Rows Amount: " + rowsAmount + ", Columns Amount: " + columnsAmount);
+                Log.d(TAG, "Rows Remainder: " + rowsRemainder + ", Columns Remainder: " + columnsRemainder);
+            }
         }
     }
 
@@ -260,6 +262,9 @@ public class BrickBackGroundView extends View {
             // Running on the columns.
             for (int j = startBrickPos[ControllerLayout.COLUMN] ; j < startBrickPos[ControllerLayout.COLUMN] + dimensions[ControllerLayout.COLUMN] ; j++)
             {
+                if (DEBUG)
+                    Log.d(TAG, "Marking Brick["+i+"]["+j+"] = " + String.valueOf(state));
+
                 // Mark brick as full.
                 bricksState[i][j] = state;
             }
@@ -335,7 +340,12 @@ public class BrickBackGroundView extends View {
                     if (canDropShadow)
                     {
                         markBricksAsFull(currentBrick, dropZoneImage.getDimensions());
-                        dispatchButtonAdded(dropZoneImage, currentBrick);
+
+                        // If the button is moving from another position and it's not new.
+                        if (dropZoneImage.getTaggedButton() != null)
+                            dispatchButtonChangedPosition(dropZoneImage, currentBrick);
+                        else
+                            dispatchButtonAdded(dropZoneImage, currentBrick);
                     }
                     else
                     {
@@ -357,10 +367,11 @@ public class BrickBackGroundView extends View {
                     // so this is only if button is moving and not dropped or dropped in invalid place.
                     if (dropZoneImage.getTaggedButton() != null)
                     {
-                        dispatchButtonAdded(dropZoneImage, dropZoneImage.getTaggedButton().getStartPosition());
+                        dispatchButtonChangedPosition(dropZoneImage, dropZoneImage.getTaggedButton().getStartPosition());
                     }
 
                     BrickBackGroundView.this.invalidate();
+
 
                     break;
             }
@@ -372,34 +383,43 @@ public class BrickBackGroundView extends View {
     }
 
     /* Interfaces*/
-    public interface ButtonAddedListener{
+    public interface DropListener{
         public void onButtonAdded(CustomButton customButton);
+        public void onButtonDeleted(CustomButton customButton);
+        public void onButtonChangedPosition(CustomButton customButton);
     }
 
-    public void setButtonAddedListener(ButtonAddedListener buttonAddedListener) {
-        this.buttonAddedListener = buttonAddedListener;
+    public void setDropListener(DropListener dropListener) {
+        this.dropListener = dropListener;
     }
 
     public void dispatchButtonAdded(DropZoneImage dropZoneImage, int[] startingPos){
 
-        if (buttonAddedListener != null)
+        if (dropListener != null)
+        {
+            dropListener.onButtonAdded(CustomButton.fromDropZoneImage(dropZoneImage, startingPos));
+        }
+        else
+        if (DEBUG)
+            Log.e(TAG, "No button Added Listener");
+    }
+
+    public void dispatchButtonChangedPosition(DropZoneImage dropZoneImage, int[] startingPos){
+
+        if (dropListener != null)
         {
             // If the button is moving from another position and is not new.
             if (dropZoneImage.getTaggedButton() != null)
             {
                 dropZoneImage.getTaggedButton().setStartPosition(startingPos);
-                buttonAddedListener.onButtonAdded(dropZoneImage.getTaggedButton());
+                dropListener.onButtonChangedPosition(dropZoneImage.getTaggedButton());
                 // Setting to null so any other method using this check will know this been handled.
                 dropZoneImage.setTaggedButton(null);
             }
-            else
-            {
-                buttonAddedListener.onButtonAdded(CustomButton.fromDropZoneImage(dropZoneImage, startingPos));
-            }
         }
         else
-            if (DEBUG)
-                Log.e(TAG, "No button Added Listener");
+        if (DEBUG)
+            Log.e(TAG, "No button Added Listener");
     }
 
     /* Getters & Setters*/

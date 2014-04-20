@@ -3,6 +3,7 @@ package com.barunster.arduinocar.views;
 import android.content.ClipData;
 import android.content.Context;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,7 +38,7 @@ import braunster.btconnection.BTConnection;
  * Created by itzik on 4/13/2014.
  */
 public class ControllerLayout extends SlidingUpPanelLayout implements
-        ControllerInterface,View.OnClickListener, View.OnLongClickListener {
+        ControllerInterface,View.OnClickListener, View.OnLongClickListener, BrickBackGroundView.DropListener {
 
     public static final int WIDTH = 0;
     public static final int HEIGHT = 1;
@@ -66,6 +67,7 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
 
     private View slidePanelMain;// The main view for the sliding up panel.
     private LinearLayout liBottomMenu, liButtonGrid, liButtonCommand;
+    DropZoneFrame deleteFrame;
     private int paneHeight, brickSize;
 
     /* Controller */
@@ -139,17 +141,20 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
 
             @Override
             public void onPanelExpanded(View panel) {
-                Log.i(TAG, "onPanelExpanded, Container");
+                if (DEBUG_LISTENERS)
+                    Log.i(TAG, "onPanelExpanded, Container");
             }
 
             @Override
             public void onPanelCollapsed(View panel) {
-                Log.i(TAG, "onPanelCollapsed, Container");
+                if (DEBUG_LISTENERS)
+                    Log.i(TAG, "onPanelCollapsed, Container");
             }
 
             @Override
             public void onPanelAnchored(View panel) {
-                Log.i(TAG, "onPanelAnchored, Container.");
+                if (DEBUG_LISTENERS)
+                    Log.i(TAG, "onPanelAnchored, Container.");
 
             }
         });
@@ -243,9 +248,17 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
                 }
             });
 
+            /* Delete Frame */
+            LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(paneHeight * 4, paneHeight);
+            deleteFrame = new DropZoneFrame(getContext());
+            deleteFrame.setVisibility(INVISIBLE);
+            deleteFrame.setOnDragListener(new DeleteFrameDragListener());
+            deleteFrame.setLayoutParams(deleteParams);
+
             linearLayout.addView(addBtn);
             linearLayout.addView(editBtn);
             linearLayout.addView(closeBtn);
+            linearLayout.addView(deleteFrame);
 
 //            linearLayout.post(new Runnable() {
 //                @Override
@@ -417,6 +430,57 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
         // TODO calc the brick size
         brickSize = MIN_BRICK_SIZE;
         return brickSize;
+    }
+
+    @Override
+    public void onButtonAdded(CustomButton customButton) {
+        if (DEBUG)
+            Log.d(TAG, "onButtonAdded");
+    }
+
+    @Override
+    public void onButtonDeleted(CustomButton customButton) {
+        if (DEBUG)
+            Log.d(TAG, "onButtonDeleted");
+    }
+
+    @Override
+    public void onButtonChangedPosition(CustomButton customButton) {
+        if (DEBUG)
+            Log.d(TAG, "onButtonChangedPosition");
+    }
+
+    /* Delete Frame Drag Class*/
+    class DeleteFrameDragListener implements OnDragListener{
+        private DropZoneImage dropZoneImage;
+
+        @Override
+        public boolean onDrag(View v, DragEvent event) {
+            dropZoneImage = (DropZoneImage) event.getLocalState();
+
+            switch (event.getAction())
+            {
+                case DragEvent.ACTION_DRAG_ENTERED:
+                    deleteFrame.setNotAvailableMode();
+                    break;
+
+                case DragEvent.ACTION_DRAG_EXITED:
+                    deleteFrame.setNormalMode();
+                    break;
+
+                case DragEvent.ACTION_DROP:
+                    deleteFrame.setNormalMode();
+                    ControllerLayout.this.onButtonDeleted(dropZoneImage.getTaggedButton());
+
+                    // So no other method will handle this situation.
+                    dropZoneImage.setTaggedButton(null);
+
+                    Toast.makeText(getContext(), "Button is deleted.", Toast.LENGTH_SHORT).show();
+                    break;
+            }
+
+            return true;
+        }
     }
 
     /* Interfaces */

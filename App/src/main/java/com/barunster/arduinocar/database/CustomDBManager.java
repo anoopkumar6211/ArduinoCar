@@ -120,6 +120,7 @@ public class CustomDBManager {
 
     public boolean deleteButtonById(long id){
         boolean isDeleted = customButtonsDataSource.deleteButtonById(id);
+        customCommandsDataSource.deleteCommandByButtonId(id);
         dispatchControllerChangedEvent();
         return isDeleted;
     }
