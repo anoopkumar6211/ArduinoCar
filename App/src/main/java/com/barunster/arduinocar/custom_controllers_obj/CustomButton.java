@@ -137,4 +137,8 @@ public class CustomButton {
     public int[] getDimensions() {
         return dimensions;
     }
+
+    public void setStartPosition(int[] startPosition) {
+        this.startPosition = startPosition;
+    }
 }

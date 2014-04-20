@@ -203,7 +203,7 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
                 @Override
                 public void onClick(View v) {
                     gateKeeper.openMenu(BOTTOM_MENU_OFFSET_FULL);
-                    isEditing = false;
+                    exitEditMode();
                     editBtn.setSelected(false);
                     openButtonGridView();
                 }
@@ -218,7 +218,11 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
                 @Override
                 public void onClick(View v) {
                     v.setSelected(!v.isSelected());
-                    isEditing = v.isSelected();
+
+                    if (v.isSelected())
+                        enterEditMode();
+                    else
+                        exitEditMode();
 
                     gateKeeper.closeMenu();
                 }
@@ -265,24 +269,7 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View v, int position, long id) {
 
-//                Log.d(TAG, "GridItemSelected");
-                ClipData data = ClipData.newPlainText("", "");
-
-                DropZoneImage dropZoneImage = (DropZoneImage) v;
-
-                // If the main view is "FrameLayout"  Get the brick size and start drag with brickShadow.
-                if (slidePanelMain instanceof FrameLayout)
-                {
-                    if (DEBUG)
-                        Log.d(TAG, "Main View is FrameLayout");
-
-                    v.startDrag(data,  // the data to be dragged
-                            ImageDragShadowBuilder.drawBricksShadow(getContext(), new int[]{ dropZoneImage.getDimensions()[COLUMN] * brickSize, // the drag shadow builder
-                                    dropZoneImage.getDimensions()[ROW] * brickSize}),  // the drag shadow builder
-                            v,      // no need to use local data
-                            0          // flags (not currently used, set to 0)
-                    );
-                }
+                createDropShadowForImage(v, (DropZoneImage) v);
 
                 gateKeeper.closeMenu();
 
@@ -445,12 +432,12 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
 
     @Override
     public void enterEditMode() {
-
+        isEditing = true;
     }
 
     @Override
     public void exitEditMode() {
-
+        isEditing = false;
     }
 
     @Override
@@ -482,7 +469,6 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
     }
 
     /* Getters & Setters*/
-
     public int getBrickSize() {
         return brickSize;
     }
@@ -503,6 +489,42 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
         this.controllerLayoutEventListener = controllerLayoutEventListener;
     }
 
+    public void createDropShadowForImage(View pressedView, DropZoneImage dropZoneImage){
+
+        if (dropZoneImage == null)
+        {
+            if (DEBUG)
+                Log.e(TAG, "createDropShadowForImage, DropZoneImage is null");
+
+            return;
+        }
+
+        ClipData data = ClipData.newPlainText("", "");
+        DragShadowBuilder imageDragShadowBuilder = ImageDragShadowBuilder.drawBricksShadow(getContext(), new int[]{ dropZoneImage.getDimensions()[COLUMN] * brickSize, // the drag shadow builder
+                dropZoneImage.getDimensions()[ROW] * brickSize});
+
+        if (imageDragShadowBuilder == null)
+        {
+            if (DEBUG)
+                Log.e(TAG, "createDropShadowForImage, imageDragShadowBuilder is null");
+
+            return;
+        }
+
+        // If the main view is "FrameLayout"  Get the brick size and start drag with brickShadow.
+        if (slidePanelMain instanceof FrameLayout)
+        {
+            if (DEBUG)
+                Log.d(TAG, "Main View is FrameLayout");
+
+            pressedView.startDrag(data,  // the data to be dragged
+                    imageDragShadowBuilder,  // the drag shadow builder
+                    dropZoneImage,      // no need to use local data
+                    0          // flags (not currently used, set to 0)
+            );
+        }
+    }
+
     MenuGateKeeper gateKeeper = new MenuGateKeeper() {
         @Override
         public void openMenu(float offset) {
@@ -514,6 +536,10 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
             ControllerLayout.this.closeMenu();
         }
     };
+
+    public boolean isEditing() {
+        return isEditing;
+    }
 
     @Override
     public void onClick(View v) {

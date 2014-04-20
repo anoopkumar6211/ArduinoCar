@@ -244,8 +244,16 @@ public class BrickBackGroundView extends View {
 
         this.invalidate();
     }
-    /** Mark brick as full by changing their positon in "brickState" to true.*/
+    /** Mark brick as full by changing their position in "brickState" to true.*/
     public void markBricksAsFull(int[] startBrickPos, int[] dimensions){
+        markBricks(startBrickPos, dimensions, true);
+    }
+    /** Mark brick as empty by changing their position in "brickState" to true.*/
+    public void markBricksAsEmpty(int[] startBrickPos, int[] dimensions){
+        markBricks(startBrickPos, dimensions, false);
+    }
+    /** Mark brick  by changing their position in "brickState" to the state given.*/
+    private void markBricks(int[] startBrickPos, int[] dimensions, boolean state){
 
         // Running on the rows
         for (int i = startBrickPos[ControllerLayout.ROW] ; i < startBrickPos[ControllerLayout.ROW] + dimensions[ControllerLayout.ROW] ; i++)
@@ -253,7 +261,7 @@ public class BrickBackGroundView extends View {
             for (int j = startBrickPos[ControllerLayout.COLUMN] ; j < startBrickPos[ControllerLayout.COLUMN] + dimensions[ControllerLayout.COLUMN] ; j++)
             {
                 // Mark brick as full.
-                bricksState[i][j] = true;
+                bricksState[i][j] = state;
             }
     }
 
@@ -327,7 +335,6 @@ public class BrickBackGroundView extends View {
                     if (canDropShadow)
                     {
                         markBricksAsFull(currentBrick, dropZoneImage.getDimensions());
-
                         dispatchButtonAdded(dropZoneImage, currentBrick);
                     }
                     else
@@ -344,6 +351,14 @@ public class BrickBackGroundView extends View {
 
                     drawDropZoneShadow = false;
                     canDropShadow = false;
+
+                    // Button is moved here from another position.
+                    // After button is dropped this tagged button is null,
+                    // so this is only if button is moving and not dropped or dropped in invalid place.
+                    if (dropZoneImage.getTaggedButton() != null)
+                    {
+                        dispatchButtonAdded(dropZoneImage, dropZoneImage.getTaggedButton().getStartPosition());
+                    }
 
                     BrickBackGroundView.this.invalidate();
 
@@ -368,14 +383,26 @@ public class BrickBackGroundView extends View {
     public void dispatchButtonAdded(DropZoneImage dropZoneImage, int[] startingPos){
 
         if (buttonAddedListener != null)
-            buttonAddedListener.onButtonAdded(CustomButton.fromDropZoneImage(dropZoneImage, startingPos));
+        {
+            // If the button is moving from another position and is not new.
+            if (dropZoneImage.getTaggedButton() != null)
+            {
+                dropZoneImage.getTaggedButton().setStartPosition(startingPos);
+                buttonAddedListener.onButtonAdded(dropZoneImage.getTaggedButton());
+                // Setting to null so any other method using this check will know this been handled.
+                dropZoneImage.setTaggedButton(null);
+            }
+            else
+            {
+                buttonAddedListener.onButtonAdded(CustomButton.fromDropZoneImage(dropZoneImage, startingPos));
+            }
+        }
         else
             if (DEBUG)
                 Log.e(TAG, "No button Added Listener");
     }
 
     /* Getters & Setters*/
-
     public int getRowsRemainder() {
         return rowsRemainder;
     }

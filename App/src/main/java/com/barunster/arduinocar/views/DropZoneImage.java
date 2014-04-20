@@ -1,14 +1,20 @@
 package com.barunster.arduinocar.views;
 
 import android.content.Context;
+import android.util.Log;
+import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
+import com.barunster.arduinocar.R;
 import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
 
 /**
  * Created by itzik on 3/12/14.
  */
 public class DropZoneImage extends ImageView{
+
+    private static final String TAG = DropZoneImage.class.getSimpleName();
 
     private int orientation, size, type;
     private CustomButton taggedButton;
@@ -67,5 +73,29 @@ public class DropZoneImage extends ImageView{
 
     public int[] getDimensions() {
         return dimensions;
+    }
+
+    /* Static Methods*/
+    public static DropZoneImage crateDropZoneImageForButton(Context context, CustomButton customButton){
+        if (customButton == null)
+        {
+            Log.e(TAG, " Cant create drop zone image, Button is null");
+            return null;
+        }
+
+        DropZoneImage buttonImage = new DropZoneImage(context);
+        buttonImage.setImageDrawable(context.getResources().getDrawable(R.drawable.stick_button));
+        buttonImage.setLayoutParams(new GridView.LayoutParams(100, 100));
+        buttonImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        buttonImage.setPadding(8, 8, 8, 8);
+
+        buttonImage.setSize(customButton.getSize());
+        buttonImage.setOrientation(customButton.getOrientation());
+        buttonImage.setType(customButton.getType());
+        buttonImage.setDimensions(customButton.getDimensions());
+
+        buttonImage.setTaggedButton(customButton);
+
+        return buttonImage;
     }
 }

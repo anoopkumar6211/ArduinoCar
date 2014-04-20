@@ -5,7 +5,10 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.GridView;
+import android.widget.ImageView;
 
+import com.barunster.arduinocar.R;
 import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
 import com.barunster.arduinocar.custom_controllers_obj.CustomController;
 import com.barunster.arduinocar.database.CustomDBManager;
@@ -200,21 +203,29 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
         if (DEBUG)
             Log.d(TAG, "onButtonAdded");
 
-        customButton.setControllerId(customController.getId());
+        // Button is not new, button just changed his position.
+        if (customButton.getId() != -1){
+            // Updating the database
+            CustomDBManager.getInstance().updateButtonById(customButton);
+        }
+        else
+        {
+            customButton.setControllerId(customController.getId());
 
-        // Adding the button to the database
-        long id = CustomDBManager.getInstance().addButton(customButton);
+            // Adding the button to the database
+            long id = CustomDBManager.getInstance().addButton(customButton);
+
+            // Adding the button obj to the custom controller obj and setting the button id.
+            customButton.setId(id);
+            customController.getButtons().add(customButton);
+        }
 
         // Adding the button view and setting his id to the id of the button in the database.
         View view = addButtonToView(customButton);
-        view.setId((int) id);
+        view.setId((int) customButton.getId());
 
         // Adding it to the buttons view list.
         buttons.add(view);
-
-        // Adding the button obj to the custom controller obj and setting the button id.
-        customButton.setId(id);
-        customController.getButtons().add(customButton);
     }
 
     @Override
@@ -243,5 +254,28 @@ public class BrickControllerLayout extends ControllerLayout implements BrickBack
         });
 
 
+    }
+
+    @Override
+    public boolean onLongClick(View v) {
+
+        if (DEBUG)
+            Log.d(TAG, "onLongClick");
+
+        if (isEditing())
+        {
+            if (v instanceof SlideButton)
+                v = (View) v.getParent();
+
+            CustomButton customButton = customController.getCustomButtonById(v.getId());
+
+            brickBackGroundView.markBricksAsEmpty(customButton.getStartPosition(), customButton.getDimensions());
+
+            createDropShadowForImage(v, DropZoneImage.crateDropZoneImageForButton(getContext(), customButton));
+
+            mainView.removeView(v);
+        }
+
+        return super.onLongClick(v);
     }
 }
