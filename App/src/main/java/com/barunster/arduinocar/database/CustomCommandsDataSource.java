@@ -49,6 +49,7 @@ public class CustomCommandsDataSource {
 
     public long addCommand(CustomCommand customCommand){
 
+        // Delete old command.
         deleteCommandByButtonId(customCommand.getButtonId());
 
         open();

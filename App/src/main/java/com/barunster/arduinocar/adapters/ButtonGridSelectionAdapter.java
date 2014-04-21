@@ -64,42 +64,42 @@ public class ButtonGridSelectionAdapter extends BaseAdapter {
             buttonImage.setSize(4);
             buttonImage.setOrientation(LinearLayout.HORIZONTAL);
             buttonImage.setType(CustomButton.buttonTags.get(position));
-            buttonImage.setDimensions(new int[]{ 1, 4});
+            buttonImage.setDimensions(new int[]{ 1, 8});
         }
         else if (position == 2)
         {
             buttonImage.setSize(4);
             buttonImage.setOrientation(LinearLayout.VERTICAL);
             buttonImage.setType(CustomButton.buttonTags.get(position));
-            buttonImage.setDimensions(new int[]{ 4, 1});
+            buttonImage.setDimensions(new int[]{ 8, 1});
         }
         else if (position == 3)
         {
             buttonImage.setSize(3);
             buttonImage.setOrientation(LinearLayout.HORIZONTAL);
             buttonImage.setType(CustomButton.buttonTags.get(1));
-            buttonImage.setDimensions(new int[]{ 1, 3});
+            buttonImage.setDimensions(new int[]{ 1, 6});
         }
         else if (position == 4)
         {
             buttonImage.setSize(3);
             buttonImage.setOrientation(LinearLayout.VERTICAL);
             buttonImage.setType(CustomButton.buttonTags.get(2));
-            buttonImage.setDimensions(new int[]{3, 1});
+            buttonImage.setDimensions(new int[]{6, 1});
         }
         else if (position == 5)
         {
             buttonImage.setSize(2);
             buttonImage.setOrientation(LinearLayout.HORIZONTAL);
             buttonImage.setType(CustomButton.buttonTags.get(1));
-            buttonImage.setDimensions(new int[]{1, 2});
+            buttonImage.setDimensions(new int[]{1, 3});
         }
         else if (position == 6)
         {
             buttonImage.setSize(2);
             buttonImage.setOrientation(LinearLayout.VERTICAL);
             buttonImage.setType(CustomButton.buttonTags.get(2));
-            buttonImage.setDimensions(new int[]{2, 1});
+            buttonImage.setDimensions(new int[]{3, 1});
         }
         else
         {

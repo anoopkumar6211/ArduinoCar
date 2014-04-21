@@ -269,6 +269,9 @@ public class BrickControllerLayout extends ControllerLayout  {
             mainView.removeView(buttons.get(i));
         }
 
+        if (brickBackGroundView != null)
+            brickBackGroundView.initBrickStates();
+
         mainView.post(new Runnable() {
             @Override
             public void run() {

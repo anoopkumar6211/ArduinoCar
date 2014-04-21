@@ -70,6 +70,11 @@ public class BrickBackGroundView extends View {
         dropZoneInvalidDropPaint.setStyle(Paint.Style.FILL);
     }
 
+    public void initBrickStates(){
+        if (rowsAmount != -1 && columnsAmount != -1)
+            bricksState = new boolean[rowsAmount][columnsAmount];
+    }
+
     private void calcRowsAndColumnsAmount(){
         if (rowsAmount == -1 && columnsAmount == -1)
         {
@@ -80,7 +85,7 @@ public class BrickBackGroundView extends View {
             columnsRemainder = getMeasuredWidth() % brickSize;
 
             // Init brick state
-            bricksState = new boolean[rowsAmount][columnsAmount];
+            initBrickStates();
 
             if (DEBUG) {
                 Log.d(TAG, "Height: " + getMeasuredHeight() + ", Width: " + getMeasuredWidth());

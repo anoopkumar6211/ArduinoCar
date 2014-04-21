@@ -137,8 +137,8 @@ public class CustomDBManager {
     }
 
     public void addCommand(CustomCommand customCommand) {
-        dispatchControllerChangedEvent();
         customCommandsDataSource.addCommand(customCommand);
+        dispatchControllerChangedEvent();
     }
 
     /*

@@ -249,7 +249,7 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
             });
 
             /* Delete Frame */
-            LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(paneHeight * 4, paneHeight);
+            LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams( paneHeight * 5, paneHeight);
             deleteFrame = new DropZoneFrame(getContext());
             deleteFrame.setVisibility(INVISIBLE);
             deleteFrame.setOnDragListener(new DeleteFrameDragListener());
@@ -381,10 +381,11 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
                             customCommand.setExtraSpeedData(Integer.parseInt(((EditText) liButtonCommand.findViewById(R.id.et_command_extra)).getText().toString()));
                     }
 
+                    // Add the command to the button.
+                    customController.getCustomButtonById(customButton.getId()).setCustomCommand(customCommand);
+
                     // Add the command to the database.
                     CustomDBManager.getInstance().addCommand(customCommand);
-                    // Add the command to the button.
-                    customButton.setCustomCommand(customCommand);
 
                     // Adding new data to the button if needed. else refresh the button so new command type will be applied.
                     if (liButtonCommand.findViewById(R.id.linear_slide_data).getVisibility() == View.VISIBLE)
@@ -399,7 +400,6 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
 
                         // Recreate the controller TODO refresh only relevant button and not the whole layout.
                         setController(customController);
-
                     }
                     else
                     {
@@ -453,6 +453,7 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
     /* Delete Frame Drag Class*/
     class DeleteFrameDragListener implements OnDragListener{
         private DropZoneImage dropZoneImage;
+
 
         @Override
         public boolean onDrag(View v, DragEvent event) {
@@ -508,6 +509,7 @@ public class ControllerLayout extends SlidingUpPanelLayout implements
     public void setController(CustomController customController) {
         this.customController = customController;
         commandsExecutor.setControllerId(customController.getId());
+
     }
 
     @Override

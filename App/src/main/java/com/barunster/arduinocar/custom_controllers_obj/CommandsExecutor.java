@@ -276,6 +276,6 @@ public class CommandsExecutor implements View.OnClickListener, SlideButtonLayout
 
     @Override
     public void onChanged() {
-//        customController = customControllerManager.getControllerById(controllerId);
+        customController = customControllerManager.getControllerById(controllerId);
     }
 }
