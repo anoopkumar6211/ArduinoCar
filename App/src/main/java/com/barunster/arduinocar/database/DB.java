@@ -30,7 +30,9 @@ public class DB   {
 
                 + Column.ROWS + TYPE_I + COMMA_SEP
 
-                + Column.COLUMNS + TYPE_I
+                + Column.COLUMNS + TYPE_I + COMMA_SEP
+
+                + Column.SIZE + TYPE_I
 
                 +" );");
     }
@@ -97,14 +99,13 @@ public class DB   {
         public static final String T_CUSTOM_BUTTONS = "_table_buttons";
         public static final String T_CUSTOM_COMMANDS = "_table_commands";
     }
+
 	// Columns names
     public static final class Column implements BaseColumns {
-
-
         //General
         public static final String ID = "_id";
         public static final String ID_CONTROLLER = "_id_controller";
-        public static final String ID_BUTTON = "_id_controller";
+        public static final String ID_BUTTON = "_id_button";
         public static final String NAME = "_name";
         public static final String TYPE = "_type";
         public static final String SIZE = "_size";

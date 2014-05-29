@@ -2,8 +2,9 @@
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_weight="0.5">
+    android:layout_height="wrap_content"
+    android:layout_gravity="top"
+    android:gravity="top">
 
 
         <com.barunster.arduinocar.views.edit_command.ChannelsView
@@ -26,7 +27,6 @@
             android:inputType="number"
             android:ems="10"
             android:id="@+id/et_command_extra"
-            android:layout_weight="1"
             android:layout_gravity="center_horizontal"
             android:visibility="gone"/>
 

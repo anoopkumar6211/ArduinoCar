@@ -1,6 +1,7 @@
 package com.barunster.arduinocar.views;
 
 import android.content.Context;
+import android.graphics.Point;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,31 +28,24 @@ public class BrickControllerLayout extends ControllerLayout  {
     private static final boolean DEBUG = true;
     private FrameLayout mainView;
 
-    private BrickBackGroundView brickBackGroundView;
-
     public BrickControllerLayout(Context context, int paneHeight) {
         super(context, paneHeight);
 
         init();
     }
 
-    private List<View> buttons = new ArrayList<View>();
+    public BrickControllerLayout(Context context, Point screenSize) {
+        super(context, screenSize);
 
-    private void init(){
-        mainView = new FrameLayout(getContext());
-        mainView.setLayoutParams(new SlidingUpPanelLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        initBackground();
-
-        initSlidingBottomMenu(mainView); // Adding the main view to the Sliding Layout.
+        init();
     }
+
+    private List<View> buttons = new ArrayList<View>();
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-
-        if (DEBUG)
-            Log.i(TAG, "onMeasure");
+        if (DEBUG) Log.v(TAG, "OnMeasure");
     }
 
     @Override
@@ -67,15 +61,37 @@ public class BrickControllerLayout extends ControllerLayout  {
         super.onSizeChanged(w, h, oldw, oldh);
 
         if (DEBUG)
-            Log.i(TAG, "onSizeChanged, Width: " + w + ", Height: " + h + ", Old Width: " + oldw + ", OldHeight: " + oldh);
+            Log.v(TAG, "onSizeChanged, Width: " + w + ", Height: " + h + ", Old Width: " + oldw + ", OldHeight: " + oldh);
 
         if (oldh != 0 || oldw != 0)
         {
-            // TODO Handle size change
+            brickBackGroundView.initSizes();
+//            reCalcAllButtonPositions();
+            // TODO change method to the reCalc. Button is not redrawing themselves in the right position.
+            removeAllButtons();
+
+            mainView.post(new Runnable() {
+                @Override
+                public void run() {
+                    addButtons(BrickControllerLayout.this.customController.getButtons());
+                }
+            });
         }
     }
 
+    private void init(){
+        mainView = new FrameLayout(getContext());
+        mainView.setLayoutParams(new SlidingUpPanelLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        initSlidingBottomMenu(mainView); // Adding the main view to the Sliding Layout.
+    }
+
+    /** Initialize the BrickBackgroundView*/
     private void initBackground(){
+        // Removing the old background view from the main view.
+        if (brickBackGroundView != null)
+            mainView.removeView((View) brickBackGroundView.getParent());
+
         FrameLayout.LayoutParams frameParams;
 
         FrameLayout frameLayout = new FrameLayout(getContext());
@@ -83,13 +99,17 @@ public class BrickControllerLayout extends ControllerLayout  {
         frameParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         frameLayout.setLayoutParams(frameParams);
 
-        brickBackGroundView = new BrickBackGroundView(getContext(), getBrickSize());
+        if (customController.getBrickSize() != -1)
+            brickBackGroundView = new BrickBackGroundView(getContext(), customController.getBrickSize());
+        else brickBackGroundView = new BrickBackGroundView(getContext(), customController.getRows(), customController.getColumns());
+
         brickBackGroundView.setDropListener(this);
         frameLayout.addView(brickBackGroundView);
 
         mainView.addView(frameLayout);
     }
 
+    /** Add a button to the view. Position size and other calculation included.*/
     private View addButtonToView(CustomButton customButton){
 
         // Mark the spave the button takes as full.
@@ -101,11 +121,13 @@ public class BrickControllerLayout extends ControllerLayout  {
         View view = null;
         SlideButtonLayout slideButtonLayout;
 
-        FrameLayout.LayoutParams buttonParams = new FrameLayout.LayoutParams(customButton.getDimensions()[COLUMN] * getBrickSize(), customButton.getDimensions()[ROW] * getBrickSize());
+        FrameLayout.LayoutParams buttonParams = new FrameLayout.LayoutParams(
+                customButton.getDimensions()[COLUMN] * brickBackGroundView.getBrickSize(),
+                customButton.getDimensions()[ROW] * brickBackGroundView.getBrickSize());
 
         buttonParams.setMargins(
-                brickBackGroundView.getColumnsRemainder()/2 + (getBrickSize() * (customButton.getStartPosition()[COLUMN])), // Margin from the left
-                brickBackGroundView.getRowsRemainder()/2 + (getBrickSize() * (customButton.getStartPosition()[ROW])) , // Margin from the top
+                brickBackGroundView.getColumnsRemainder()/2 + (brickBackGroundView.getBrickSize() * (customButton.getStartPosition()[COLUMN])), // Margin from the left
+                brickBackGroundView.getRowsRemainder()/2 + (brickBackGroundView.getBrickSize() * (customButton.getStartPosition()[ROW])) , // Margin from the top
                 0, 0); // Margin from the right and bottom
 
         switch (customButton.getType()) {
@@ -141,7 +163,8 @@ public class BrickControllerLayout extends ControllerLayout  {
 
                 slideButtonLayout =
                         new SlideButtonLayout(getContext(), SlideButtonLayout.SLIDE_HORIZONTALLY,
-                                getBrickSize() * customButton.getDimensions()[ROW], customButton.centerAfterDrop(), customButton.showMarks());
+                                brickBackGroundView.getBrickSize() * customButton.getDimensions()[ROW],
+                                customButton.centerAfterDrop(), customButton.showMarks());
 
                 slideButtonLayout.setType(customButton.getType());
 
@@ -168,7 +191,7 @@ public class BrickControllerLayout extends ControllerLayout  {
 
                 slideButtonLayout =
                         new SlideButtonLayout(getContext(), SlideButtonLayout.SLIDE_VERTICALLY,
-                                getBrickSize() * customButton.getDimensions()[COLUMN], customButton.centerAfterDrop(), customButton.showMarks());
+                                brickBackGroundView.getBrickSize() * customButton.getDimensions()[COLUMN], customButton.centerAfterDrop(), customButton.showMarks());
 
                 slideButtonLayout.setType(customButton.getType());
 
@@ -194,8 +217,55 @@ public class BrickControllerLayout extends ControllerLayout  {
         return view;
     }
 
+    /** Adjusting button position, Used after layout size is changed.*/
+    private void reCalcAllButtonPositions(){
+        if(DEBUG) Log.v(TAG, "reCalcAllButtonPositions");
+        FrameLayout.LayoutParams buttonParams;
+        View v;
+        for (CustomButton btn : BrickControllerLayout.this.customController.getButtons())
+        {
+            buttonParams = new FrameLayout.LayoutParams(
+                    btn.getDimensions()[COLUMN] * brickBackGroundView.getBrickSize(),
+                    btn.getDimensions()[ROW] * brickBackGroundView.getBrickSize());
 
-    /* Getters & Setters*/
+            buttonParams.setMargins(
+                    brickBackGroundView.getColumnsRemainder()/2 + (brickBackGroundView.getBrickSize() * (btn.getStartPosition()[COLUMN])), // Margin from the left
+                    brickBackGroundView.getRowsRemainder()/2 + (brickBackGroundView.getBrickSize() * (btn.getStartPosition()[ROW])) , // Margin from the top
+                    0, 0); // Margin from the right and bottom
+
+            v = getButtonView((int) btn.getId());
+            if (v != null)
+            {
+                v.setLayoutParams(buttonParams);
+                v.requestLayout();
+            }
+        }
+    }
+
+    /** Get the button view by id*/
+    private View getButtonView(int id){
+        for (View v : buttons)
+            if (v.getId() == id)
+                return v;
+
+        return null;
+    }
+
+    private void removeAllButtons(){
+        for (int i = 0 ; i < buttons.size() ; i++)
+        {
+            mainView.removeView(buttons.get(i));
+        }
+    }
+
+    private void addButtons(List<CustomButton> list){
+        // Adding the controller buttons.
+        buttons = new ArrayList<View>();
+        for (CustomButton btn : list)
+        {
+            buttons.add(addButtonToView(btn));
+        }
+    }
 
     /* Implement Methods*/
     @Override
@@ -257,34 +327,46 @@ public class BrickControllerLayout extends ControllerLayout  {
     }
 
     @Override
-    public void setController(CustomController customController) {
+    public void setController(final CustomController customController) {
         super.setController(customController);
+        if (DEBUG) Log.v(TAG, "setController");
+
+        initBackground();
+
+        if (customController.getBrickSize() != -1)
+        {
+            brickBackGroundView.calcBrickSize(customController.getBrickSize());
+        }
+
+        if (customController.getColumns() == -1 && customController.getRows() == -1)
+            brickBackGroundView.post(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "brickBackGroundView POST, rows: " + brickBackGroundView.getRowsAmount() + ", columns: " + brickBackGroundView.getColumnsAmount());
+                    customController.setRows(brickBackGroundView.getRowsAmount());
+                    customController.setColumns(brickBackGroundView.getColumnsAmount());
+                    setMinMaxValues();
+                    if(CustomDBManager.getInstance().updateController(customController))
+                    {
+                        if (DEBUG) Log.d(TAG, "Controller is updated!");
+                    }
+                    else if (DEBUG) Log.d(TAG, "Controller isn't updated!");
+                }
+            });
 
         if (DEBUG)
             Log.d(TAG, "setController, name: " + customController.getName() + ", Id: " + customController.getId());
 
         // Removing old views.
-        for (int i = 0 ; i < buttons.size() ; i++)
-        {
-            mainView.removeView(buttons.get(i));
-        }
-
-        if (brickBackGroundView != null)
-            brickBackGroundView.initBrickStates();
+        removeAllButtons();
 
         mainView.post(new Runnable() {
             @Override
             public void run() {
                 // Adding the controller buttons.
-                buttons = new ArrayList<View>();
-                for (CustomButton btn : BrickControllerLayout.this.customController.getButtons())
-                {
-                    buttons.add(addButtonToView(btn));
-                }
+                addButtons(BrickControllerLayout.this.customController.getButtons());
             }
         });
-
-
     }
 
     @Override
@@ -302,7 +384,7 @@ public class BrickControllerLayout extends ControllerLayout  {
 
             brickBackGroundView.markBricksAsEmpty(customButton.getStartPosition(), customButton.getDimensions());
 
-            createDropShadowForImage(v, DropZoneImage.crateDropZoneImageForButton(getContext(), customButton));
+            createDropShadowForImage(v, DropZoneImage.crateDropZoneImageForButton(getContext(), customButton), brickBackGroundView.getBrickSize());
 
             mainView.removeView(v);
 

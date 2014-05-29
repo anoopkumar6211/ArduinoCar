@@ -16,6 +16,7 @@ import java.util.Objects;
  */
 public class CustomDBManager {
 
+    // TODO Reduce the amount of opening and closing the database.
     private static final String TAG = CustomDBManager.class.getSimpleName();
     private static final boolean DEBUG = false;
 
@@ -48,21 +49,21 @@ public class CustomDBManager {
     /* Controller */
     public CustomController getControllerById(long id ){
 
+        BaseDataSource.leaveOpen = true;
+
         customButtonList = new ArrayList<CustomButton>();
 
         if (DEBUG)
             Log.i(TAG, "Getting controller by id, Id: " + id);
 
-        CustomController customController = controllersDataSource.getControllerById(id);
+        CustomController customController = controllersDataSource.get(DB.Column.ID, String.valueOf(id));
 
-        for (CustomButton btn : customButtonsDataSource.getButtonsByControllerId(id)) {
-            // Adding the command of the button if has any.
-            if (getCommandByButtonId((int) btn.getId()) != null) {
-                btn.setCustomCommand(getCommandByButtonId( (int) btn.getId()) );
+        for (CustomButton btn : customButtonsDataSource.getList(DB.Column.ID_CONTROLLER, String.valueOf(id))) {
+            btn.setCustomCommand(getCommandByButtonId( (int) btn.getId()) );
 
-                if (DEBUG)
-                    Log.i(TAG, "Button has command");
-            }
+            if (DEBUG && btn.getCustomCommand() != null)
+                Log.i(TAG, "Button has command");
+
             // Adding the button tot the list
             customButtonList.add(btn);
         }
@@ -73,6 +74,10 @@ public class CustomDBManager {
             customController.setButtons(customButtonList);
         }
 
+        BaseDataSource.leaveOpen = false;
+        Log.e(TAG, "end");
+        customCommandsDataSource.close();
+
         return customController;
     }
 
@@ -80,7 +85,7 @@ public class CustomDBManager {
         List<CustomController> list = new ArrayList<CustomController>();
         List<CustomController> tmpList;
 
-        tmpList = controllersDataSource.getAllControllers();
+        tmpList = controllersDataSource.getAll();
 
         for (CustomController controller : tmpList)
         {
@@ -102,59 +107,50 @@ public class CustomDBManager {
     }
 
     public long addController(CustomController customController){
-        return controllersDataSource.addController(customController);
+        return controllersDataSource.add(customController);
+    }
+
+    public boolean updateController(CustomController customController){
+        return controllersDataSource.update(customController, DB.Column.ID, String.valueOf(customController.getId()));
     }
 
     public void deleteControllerById(long id) {
-        controllersDataSource.deleteControllerById(id);
+        controllersDataSource.delete(DB.Column.ID, String.valueOf(id));
+        customButtonsDataSource.delete(DB.Column.ID_CONTROLLER, String.valueOf(id));
+        // TODO delete commands
     }
 
     /* Button */
     public CustomButton getButtonById(long buttonId) {
-        return customButtonsDataSource.getButtonByButtonId(buttonId);
+        return customButtonsDataSource.get(DB.Column.ID, String.valueOf(buttonId));
     }
 
     public long addButton(CustomButton customButton){
-        return customButtonsDataSource.addButton(customButton);
+        return customButtonsDataSource.add(customButton);
     }
 
     public boolean deleteButtonById(long id){
-        boolean isDeleted = customButtonsDataSource.deleteButtonById(id);
-        customCommandsDataSource.deleteCommandByButtonId(id);
+        boolean isDeleted = customButtonsDataSource.delete(DB.Column.ID, String.valueOf(id));
+        customCommandsDataSource.delete(DB.Column.ID_BUTTON, String.valueOf(id));
         dispatchControllerChangedEvent();
         return isDeleted;
     }
 
-    public int updateButtonById(CustomButton customButton){
-        int affectedRows= customButtonsDataSource.updateButtonById(customButton);
+    public boolean updateButtonById(CustomButton customButton){
+        boolean isUpdated= customButtonsDataSource.update(customButton, DB.Column.ID, String.valueOf(customButton.getId()));
         dispatchControllerChangedEvent();
-        return affectedRows;
+        return isUpdated;
     }
 
     /* Command */
     public CustomCommand getCommandByButtonId(int buttonId) {
-        return customCommandsDataSource.getCommandByButtonId(buttonId);
+       return customCommandsDataSource.get(DB.Column.ID_BUTTON, String.valueOf(buttonId));
     }
 
     public void addCommand(CustomCommand customCommand) {
-        customCommandsDataSource.addCommand(customCommand);
+        customCommandsDataSource.add(customCommand);
         dispatchControllerChangedEvent();
     }
-
-    /*
-    public ControllersDataSource getControllersDataSource() {
-        return controllersDataSource;
-    }
-
-    public CustomButtonsDataSource getCustomButtonsDataSource() {
-        return customButtonsDataSource;
-
-    public CustomCommandsDataSource getCustomCommandsDataSource() {
-        return customCommandsDataSource;
-    }
-
-
-    }*/
 
     public interface OnControllerDataChanged{
         public void onChanged();
@@ -164,6 +160,7 @@ public class CustomDBManager {
         this.onControllerDataChanged = onControllerDataChanged;
     }
 
+    /*Interface */
     private void dispatchControllerChangedEvent(){
         if (onControllerDataChanged != null)
             onControllerDataChanged.onChanged();

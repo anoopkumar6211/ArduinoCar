@@ -1,9 +1,13 @@
 package com.barunster.arduinocar.views;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.View;
@@ -12,24 +16,26 @@ import android.widget.Toast;
 
 import com.barunster.arduinocar.R;
 import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
+import com.barunster.arduinocar.custom_controllers_obj.CustomUtils;
 
 /**
  * Created by itzik on 4/12/2014.
  */
 public class BrickBackGroundView extends View {
 
-
-
     private static final String TAG = BrickBackGroundView.class.getSimpleName();
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
-    private static final int MIN_RADIUS_SIZE = ControllerLayout.MIN_BRICK_SIZE/4;
     private static final float CIRCLE_STROKE_SIZE = 2.0f;
+
+    public static final int MIN_BRICK_SIZE = 50;
 
     private Paint circlePaint, backgroundPaint, dropZoneValidDropPaint, dropZoneInvalidDropPaint;
 
-    private int rowsAmount = -1, columnsAmount =-1, rowsRemainder, columnsRemainder, brickSize;
-    private boolean[][] bricksState;// Keep data if the brick is available or not. false states that the break is empty, true is full.
+    private Bitmap brickBitmap;
+
+    private int rowsAmount = -1, columnsAmount =-1, rowsRemainder, columnsRemainder, brickSize = -1, radius;
+    private boolean[][] bricksState;// Keep data if the brick_w200_h200 is available or not. false states that the break is empty, true is full.
 
     private boolean drawDropZoneShadow = false, canDropShadow = false;
     private int [] dropZoneShadowCoordinates = new int[2];
@@ -37,10 +43,26 @@ public class BrickBackGroundView extends View {
 
     private DropListener dropListener;
 
-    public BrickBackGroundView(Context context, int brickSize) {
+    private boolean fillScreenMode = true;
+
+    public BrickBackGroundView(Context context, int multiplier) {
         super(context);
 
-        this.brickSize = brickSize;
+        this.brickSize = calcBrickSize(multiplier);
+
+        if (DEBUG) Log.i(TAG, "Brick size: " + brickSize);
+        init();
+    }
+
+    public BrickBackGroundView(Context context, int rowsAmount, int columnsAmount) {
+        super(context);
+
+        this.columnsAmount = columnsAmount;
+        this.rowsAmount = rowsAmount;
+
+        fillScreenMode = false;
+
+        if (DEBUG) Log.i(TAG, "Rows Amount: " + rowsAmount + ", Columns Amount: " + columnsAmount);
         init();
     }
 
@@ -70,9 +92,48 @@ public class BrickBackGroundView extends View {
         dropZoneInvalidDropPaint.setStyle(Paint.Style.FILL);
     }
 
-    public void initBrickStates(){
+    int calcBrickSize(int multiplier){
+        if(DEBUG) Log.v(TAG, "calcBrickSize, Height: " + getMeasuredHeight() + ", Dpi: " + getResources().getDisplayMetrics().densityDpi);
+
+        brickSize = MIN_BRICK_SIZE * multiplier;
+        brickSize = (int) (brickSize * CustomUtils.getDensityMultiple(getResources()));
+
+        return brickSize;
+    }
+
+    void initBrickStates(){
+        if (DEBUG) Log.v(TAG, "initBrickStates, rows: " + rowsAmount + ", columns: " + columnsAmount);
         if (rowsAmount != -1 && columnsAmount != -1)
             bricksState = new boolean[rowsAmount][columnsAmount];
+        else if (DEBUG) Log.e(TAG, "cant init brick states, size of something is -1!");
+    }
+
+    void initSizes(){
+        if (DEBUG) Log.v(TAG, "initSizes");
+
+        int tmpHeight = getMeasuredHeight() / rowsAmount;
+        int tmpWidth = getMeasuredWidth() / columnsAmount;
+        Log.d(TAG, "tmpWidth: " + tmpWidth + ", tmpHeight: " + tmpHeight);
+
+        // Rounding the size of the brick to the size of the closest and smaller bitmap available
+        // Currently only resizing when screen density is medium or low.
+        if (getResources().getDisplayMetrics().densityDpi < DisplayMetrics.DENSITY_HIGH)
+            brickSize = getRoundedBrickSize(Math.min(tmpHeight, tmpWidth));
+        else brickSize = Math.min(tmpHeight, tmpWidth);
+
+        brickBitmap = getBitmapForBrickSize(brickSize);
+
+        rowsRemainder = getMeasuredHeight() - (brickSize*rowsAmount);
+        columnsRemainder = getMeasuredWidth() - (brickSize*columnsAmount);
+
+        radius = brickSize/4;
+
+        if (DEBUG) {
+            Log.d(TAG, "Brick Size: " + brickSize);
+            Log.d(TAG, "Height: " + getMeasuredHeight() + ", Width: " + getMeasuredWidth());
+            Log.d(TAG, "Rows Amount: " + rowsAmount + ", Columns Amount: " + columnsAmount);
+            Log.d(TAG, "Rows Remainder: " + rowsRemainder + ", Columns Remainder: " + columnsRemainder);
+        }
     }
 
     private void calcRowsAndColumnsAmount(){
@@ -81,28 +142,24 @@ public class BrickBackGroundView extends View {
             rowsAmount = getMeasuredHeight() / brickSize;
             columnsAmount = getMeasuredWidth() / brickSize;
 
-            rowsRemainder = getMeasuredHeight() % brickSize;
-            columnsRemainder = getMeasuredWidth() % brickSize;
-
-            // Init brick state
-            initBrickStates();
-
-            if (DEBUG) {
-                Log.d(TAG, "Height: " + getMeasuredHeight() + ", Width: " + getMeasuredWidth());
-                Log.d(TAG, "Rows Amount: " + rowsAmount + ", Columns Amount: " + columnsAmount);
-                Log.d(TAG, "Rows Remainder: " + rowsRemainder + ", Columns Remainder: " + columnsRemainder);
-            }
+            initSizes();
         }
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        if (DEBUG) Log.v(TAG, "OnMeasure");
 
-        calcRowsAndColumnsAmount();
+        // Do calculations only if not initialized already.
+        if ( (rowsAmount == -1 && columnsAmount == -1) || brickSize == -1) {
+            if (fillScreenMode)
+                calcRowsAndColumnsAmount();
+            else
+                initSizes();
 
-        if (DEBUG)
-            Log.d(TAG, "onMeasure");
+            initBrickStates();
+        }
     }
 
     @Override
@@ -127,14 +184,18 @@ public class BrickBackGroundView extends View {
                 getMeasuredHeight() - rowsRemainder/2, // Bottom
                 backgroundPaint ); // Paint
 
+
+
         // Drawing the circles
         for (int i = 0 ; i < rowsAmount ; i++)
             for (int j = 0 ; j < columnsAmount ; j++)
             {
-                canvas.drawCircle( (j * brickSize) + brickSize/2 + columnsRemainder/2, // X
-                        (i * brickSize) + brickSize/2 + rowsRemainder/2, // Y
-                        MIN_RADIUS_SIZE, // Radius
-                        circlePaint);// Paint
+//                canvas.drawCircle( (j * brickSize) + brickSize/2 + columnsRemainder/2, // X
+//                        (i * brickSize) + brickSize/2 + rowsRemainder/2, // Y
+//                        radius, // Radius
+//                        circlePaint);// Paint
+
+                canvas.drawBitmap(brickBitmap, (j * brickSize)  + columnsRemainder/2 , (i * brickSize)  + rowsRemainder/2, new Paint(Paint.ANTI_ALIAS_FLAG));
             }
 
         if (drawDropZoneShadow) {
@@ -142,7 +203,7 @@ public class BrickBackGroundView extends View {
                 Log.d(TAG, "onDraw, drawDropZoneShadow");
 
             canvas.drawRect(
-                    columnsRemainder/2 + (dropZoneShadowCoordinates[ControllerLayout.COLUMN] * brickSize), // Left Calc - The out of bound size + brick size multiple by the starting column position.(ie. col 2 * 100 brickSize)
+                    columnsRemainder/2 + (dropZoneShadowCoordinates[ControllerLayout.COLUMN] * brickSize), // Left Calc - The out of bound size + brick_w200_h200 size multiple by the starting column position.(ie. col 2 * 100 brickSize)
                     rowsRemainder/2 + (dropZoneShadowCoordinates[ControllerLayout.ROW] * brickSize), // Top
                     (dropZoneShadowCoordinates[ControllerLayout.COLUMN] * brickSize) + (dropZoneShadowDimensions[ControllerLayout.COLUMN] * brickSize) + columnsRemainder/2, // Right
                     (dropZoneShadowCoordinates[ControllerLayout.ROW] * brickSize) + (dropZoneShadowDimensions[ControllerLayout.ROW] * brickSize) + rowsRemainder/2, // Bottom
@@ -150,7 +211,7 @@ public class BrickBackGroundView extends View {
         }
     }
 
-    /** Gets the row number of a brick by given touch position on the screen.*/
+    /** Gets the row number of a brick_w200_h200 by given touch position on the screen.*/
     private int getRowNumberForY(float y){
 
         // Check for getting out of bounds
@@ -164,7 +225,7 @@ public class BrickBackGroundView extends View {
         else
             return ((int) Math.ceil(y / brickSize)) - 1;
     }
-    /** Gets the column number of a brick by given touch position on the screen.*/
+    /** Gets the column number of a brick_w200_h200 by given touch position on the screen.*/
     private int getColumnForX(float x){
 
         // Check for getting out of bounds
@@ -177,7 +238,7 @@ public class BrickBackGroundView extends View {
             return 0;
         else return ((int) Math.ceil(x / brickSize)) - 1;
     }
-    /** @return an array that contain the brick row and column position by the given position of the user touch coordinates*/
+    /** @return an array that contain the brick_w200_h200 row and column position by the given position of the user touch coordinates*/
     private int [] getBrickNumberForCoordinates(float x , float y){
         if (DEBUG)
             Log.d(TAG, "getBrickNumberForCoordinates, X: " + x + ", Y; " + y);
@@ -247,32 +308,53 @@ public class BrickBackGroundView extends View {
         drawDropZoneShadow = true;
         canDropShadow = canDrop;
 
-        // TODO set the state to true for positions.
-
         this.invalidate();
     }
-    /** Mark brick as full by changing their position in "brickState" to true.*/
-    public void markBricksAsFull(int[] startBrickPos, int[] dimensions){
+    /** Mark brick_w200_h200 as full by changing their position in "brickState" to true.*/
+    void markBricksAsFull(int[] startBrickPos, int[] dimensions){
         markBricks(startBrickPos, dimensions, true);
     }
-    /** Mark brick as empty by changing their position in "brickState" to true.*/
-    public void markBricksAsEmpty(int[] startBrickPos, int[] dimensions){
+    /** Mark brick_w200_h200 as empty by changing their position in "brickState" to true.*/
+    void markBricksAsEmpty(int[] startBrickPos, int[] dimensions){
         markBricks(startBrickPos, dimensions, false);
     }
-    /** Mark brick  by changing their position in "brickState" to the state given.*/
-    private void markBricks(int[] startBrickPos, int[] dimensions, boolean state){
+    /** Mark brick_w200_h200  by changing their position in "brickState" to the state given.*/
+    private void markBricks(final int[] startBrickPos, final int[] dimensions, final boolean state){
+        if (dimensions == null || startBrickPos == null)
+        {
+            if (DEBUG) Log.d(TAG, "dimensions/startBrickPos is null");
+            return;
+        }
 
-        // Running on the rows
-        for (int i = startBrickPos[ControllerLayout.ROW] ; i < startBrickPos[ControllerLayout.ROW] + dimensions[ControllerLayout.ROW] ; i++)
-            // Running on the columns.
-            for (int j = startBrickPos[ControllerLayout.COLUMN] ; j < startBrickPos[ControllerLayout.COLUMN] + dimensions[ControllerLayout.COLUMN] ; j++)
-            {
-                if (DEBUG)
-                    Log.d(TAG, "Marking Brick["+i+"]["+j+"] = " + String.valueOf(state));
+        if (bricksState == null)
+            initBrickStates();
 
-                // Mark brick as full.
-                bricksState[i][j] = state;
+        if (DEBUG) Log.v(TAG, "markBricks, length: " + bricksState.length);
+
+        // Prevent to much work on main thread.
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // Running on the rows
+                for (int i = startBrickPos[ControllerLayout.ROW] ; i < startBrickPos[ControllerLayout.ROW] + dimensions[ControllerLayout.ROW] ; i++)
+                    // Running on the columns.
+                    for (int j = startBrickPos[ControllerLayout.COLUMN] ; j < startBrickPos[ControllerLayout.COLUMN] + dimensions[ControllerLayout.COLUMN] ; j++)
+                    {
+                        if (DEBUG)
+                            Log.d(TAG, "Marking Brick["+i+"]["+j+"] = " + String.valueOf(state));
+
+                        // Mark brick.
+                        /* After the screen is locked or go to sleep in some devices the system will destroy and recreate the app due to orientation change,
+                          This behavior can cause some problems that do not affect the UI and can be ignored just need to be caught.*/
+                        try {
+                            bricksState[i][j] = state;
+                        } catch (ArrayIndexOutOfBoundsException e) {
+                            Log.e(TAG, "requested brick is out of bounds, row: " + i + ", column: " + j);
+                        }
+                    }
             }
+        }).start();
+
     }
 
     class bricksDragListener implements OnDragListener {
@@ -291,7 +373,7 @@ public class BrickBackGroundView extends View {
             switch (event.getAction())
             {
                 case DragEvent.ACTION_DRAG_LOCATION:
-                    // Drag is hovering above a new and valid brick.
+                    // Drag is hovering above a new and valid brick_w200_h200.
                     if  ( currentBrick[ControllerLayout.ROW] != -1 && currentBrick[ControllerLayout.COLUMN] != -1 )
                     {
                         // Check if there was a change from the last pos so the app wont redraw the same highlight.
@@ -301,7 +383,7 @@ public class BrickBackGroundView extends View {
                             if (DEBUG)
                             Log.d(TAG, "Brick, Row: " + currentBrick[ControllerLayout.ROW] + ", Column: " + currentBrick[ControllerLayout.COLUMN]);
 
-                        // Get the most left brick that the shadows is upon
+                        // Get the most left brick_w200_h200 that the shadows is upon
                         if ( isAvailableForDrop(currentBrick, dropZoneImage.getDimensions()) )
                         {
                             if (DEBUG)
@@ -394,11 +476,11 @@ public class BrickBackGroundView extends View {
         public void onButtonChangedPosition(CustomButton customButton);
     }
 
-    public void setDropListener(DropListener dropListener) {
+    void setDropListener(DropListener dropListener) {
         this.dropListener = dropListener;
     }
 
-    public void dispatchButtonAdded(DropZoneImage dropZoneImage, int[] startingPos){
+    private void dispatchButtonAdded(DropZoneImage dropZoneImage, int[] startingPos){
 
         if (dropListener != null)
         {
@@ -409,7 +491,7 @@ public class BrickBackGroundView extends View {
             Log.e(TAG, "No button Added Listener");
     }
 
-    public void dispatchButtonChangedPosition(DropZoneImage dropZoneImage, int[] startingPos){
+    private void dispatchButtonChangedPosition(DropZoneImage dropZoneImage, int[] startingPos){
 
         if (dropListener != null)
         {
@@ -428,20 +510,24 @@ public class BrickBackGroundView extends View {
     }
 
     /* Getters & Setters*/
-    public int getRowsRemainder() {
+    int getRowsRemainder() {
         return rowsRemainder;
     }
 
-    public int getColumnsRemainder() {
+    int getColumnsRemainder() {
         return columnsRemainder;
     }
 
-    public int getRowsAmount() {
+    int getRowsAmount() {
         return rowsAmount;
     }
 
-    public int getColumnsAmount() {
+    int getColumnsAmount() {
         return columnsAmount;
+    }
+
+    int getBrickSize() {
+        return brickSize;
     }
 
     /* Building Site*/
@@ -455,7 +541,7 @@ public class BrickBackGroundView extends View {
         // Get all relevant and available bricks that can contain this button in the row.
         int [] fromTo = getAllAvailableBricksForButtonInRow(brickPos[ControllerLayout.COLUMN], brickPos[ControllerLayout.ROW], dimensions[ControllerLayout.WIDTH]);
 
-        // Run from the starting optional brick to the last. (not exactly the last, but instead the last available brick minus the size of the button minus one.
+        // Run from the starting optional brick_w200_h200 to the last. (not exactly the last, but instead the last available brick_w200_h200 minus the size of the button minus one.
         for (columnRunner  = fromTo[ControllerLayout.FROM]; (columnRunner < (fromTo[ControllerLayout.TO] - dimensions[ControllerLayout.WIDTH] - 1)) && !found ; columnRunner++)
         {
             for (int j = 1 ; (j < dimensions[ControllerLayout.HEIGHT]) && (upOk || downOk) ; j++)
@@ -515,7 +601,7 @@ public class BrickBackGroundView extends View {
         for (int i = 1; (i < size) && (rightOk || leftOk) ; i++)
         {
             /* "leftOk" - make sure that the checking process did not end for that side due to out of bounds or taken spot.
-            *  "bricksState[row][startBrick  - i]" - check that the brick is available.
+            *  "bricksState[row][startBrick  - i]" - check that the brick_w200_h200 is available.
             * "startBrick - i >= 0" - Check if that the check positions is still inside the row dimensions.*/
             if (leftOk && bricksState[row][startBrick  - i] && startBrick - i >= 0 )
             {
@@ -525,7 +611,7 @@ public class BrickBackGroundView extends View {
             else leftOk = false;
 
             /* "rightOk" - make sure that the checking process did not end for that side due to out of bounds or taken spot.
-            *  "bricksState[row][startBrick  + i]" - check that the brick is available.
+            *  "bricksState[row][startBrick  + i]" - check that the brick_w200_h200 is available.
             * "startBrick  + i < bricksState[row].length" - Check if that the check positions is still inside the row dimensions.*/
             if (rightOk && bricksState[row][startBrick  + i] && startBrick  + i < bricksState[row].length)
             {
@@ -535,6 +621,77 @@ public class BrickBackGroundView extends View {
         }
 
         return new int[]{startBrick - leftSteps, startBrick + rightSteps};
+    }
+
+    private int getRoundedBrickSize(int brickSize){
+
+        if (brickSize < 100)
+        {
+            brickSize = 50;
+        }
+        else if (brickSize < 150)
+        {
+            brickSize = 100;
+        }
+        else if (brickSize < 200)
+        {
+             brickSize = 150;
+        }
+        else if (brickSize < 300)
+        {
+            brickSize = 200;
+        }
+        else if (brickSize < 400)
+        {
+            brickSize = 300;
+        }
+        else brickSize = 500;
+
+        return brickSize;
+    }
+
+    private Bitmap getBitmapForBrickSize(int brickSize){
+        if (brickSize < 50)
+        {
+            return getResizeBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.brick_w50_h50), brickSize, brickSize);
+        }
+        else if (brickSize <= 100)
+        {
+            return getResizeBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.brick_w100_h100), brickSize, brickSize);
+        }
+        else if (brickSize <= 150)
+        {
+            return getResizeBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.brick_w150_h150), brickSize, brickSize);
+        }
+        else if (brickSize <= 200)
+        {
+            return getResizeBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.brick_w200_h200), brickSize, brickSize);
+        }
+        else if (brickSize <= 300)
+        {
+            return getResizeBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.brick_w300_h300), brickSize, brickSize);
+        }
+        else if (brickSize <= 400)
+        {
+            return getResizeBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.brick_w400_h400), brickSize, brickSize);
+        }
+
+        return getResizeBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.brick_w500_h500), brickSize, brickSize);
+    }
+
+    private Bitmap getResizeBitmap(Bitmap bm, int newHeight, int newWidth) {
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        // CREATE A MATRIX FOR THE MANIPULATION
+        Matrix matrix = new Matrix();
+        // RESIZE THE BIT MAP
+        matrix.postScale(scaleWidth, scaleHeight);
+
+        // "RECREATE" THE NEW BITMAP
+        Bitmap resizeBitmap = Bitmap.createBitmap(bm, 0, 0, width, height, matrix, false);
+        return resizeBitmap;
     }
 
 }

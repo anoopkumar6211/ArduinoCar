@@ -13,14 +13,14 @@
         android:id="@+id/view_pager_menu"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_weight="1"></android.support.v4.view.ViewPager>
+        android:layout_gravity="top"></android.support.v4.view.ViewPager>
 
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="9"
-        android:gravity="center">
+        android:id="@+id/linear_menu_buttons"
+        android:layout_gravity="bottom">
 
         <Button
             android:layout_width="fill_parent"
@@ -32,16 +32,23 @@
         <Button
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:text="@string/settings"
-            android:id="@+id/btn_settings"
+            android:text="@string/controllers"
+            android:id="@+id/btn_select_controller"
+            android:layout_weight="1" />
+
+        <Button
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:text="@string/add_button"
+            android:id="@+id/btn_add_button"
             android:layout_weight="1"/>
 
         <Button
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:text="@string/controllers"
-            android:id="@+id/btn_select_controller"
-            android:layout_weight="1" />
+            android:text="@string/edit_button"
+            android:id="@+id/btn_edit"
+            android:layout_weight="1"/>
 
         <Button
             android:layout_width="fill_parent"

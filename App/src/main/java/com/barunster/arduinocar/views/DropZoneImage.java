@@ -31,6 +31,11 @@ public class DropZoneImage extends ImageView{
         this.size = size;
     }
 
+    public DropZoneImage(Context context, int[] dimensions) {
+        super(context);
+        this.dimensions = dimensions;
+    }
+
     public int getOrientation() {
         return orientation;
     }
@@ -49,6 +54,11 @@ public class DropZoneImage extends ImageView{
 
     public void setType(int type) {
         this.type = type;
+
+        if (type == CustomButton.BUTTON_TYPE_SLIDE_HORIZONTAL)
+            orientation = LinearLayout.HORIZONTAL;
+        else if (type == CustomButton.BUTTON_TYPE_SLIDE_VERTICAL)
+            orientation = LinearLayout.VERTICAL;
     }
 
     public int getType() {

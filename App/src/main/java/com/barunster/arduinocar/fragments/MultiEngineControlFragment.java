@@ -1,27 +1,23 @@
-package com.barunster.arduinocar.fragments.not_used;
+package com.barunster.arduinocar.fragments;
 
-import android.app.ActionBar;
+import android.app.Activity;
+import android.graphics.Point;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.ScaleAnimation;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.barunster.arduinocar.ArduinoCarAppObj;
+import com.barunster.arduinocar.MainActivity;
 import com.barunster.arduinocar.R;
 import com.barunster.arduinocar.custom_controllers_obj.CustomButton;
 import com.barunster.arduinocar.custom_controllers_obj.CustomController;
 import com.barunster.arduinocar.database.CustomDBManager;
-import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
 import com.barunster.arduinocar.fragments.bottom_menu.BottomMenuFragment;
 import com.barunster.arduinocar.interfaces.ControllerLayoutEventListener;
 import com.barunster.arduinocar.views.BrickControllerLayout;
-import com.barunster.arduinocar.views.FramesControllerLayout;
 import com.barunster.arduinocar.views.SlidingUpPanelLayout;
 
 /**
@@ -41,6 +37,7 @@ public class MultiEngineControlFragment extends ArduinoLegoFragment {
 
     SlidingUpPanelLayout slidingUpPanelLayout;
     BottomMenuFragment bottomMenuFragment;
+    private long openControllerId;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,13 +50,18 @@ public class MultiEngineControlFragment extends ArduinoLegoFragment {
 
         mainView = (LinearLayout) inflater.inflate(R.layout.verical_test, null);
 
-        controllerLayout = new BrickControllerLayout(getActivity(), (int) (getScreenHeight()/TOP_MENU_SIZE_DIVIDER));
+        Point p = new Point((int) getScreenWidth(),(int) getScreenHeight());
+        Log.i(TAG, p.x + " : " + p.y);
+        controllerLayout = new BrickControllerLayout(getActivity(), p/*(int) (getScreenHeight()/ MainActivity.TOP_MENU_SIZE_DIVIDER)*/);
 
         if (app.getCustomDBManager().getAllControllers().isEmpty())
         {
-            onControllerSelected(app.getCustomDBManager().addController(new CustomController("Default",0,0 )));
+            onControllerSelected(app.getCustomDBManager().addController(new CustomController("Default",6,6 )));
         }
-        else onControllerSelected(1); // TODO fix default
+        else if (controllerId != -1)
+            onControllerSelected(controllerId);
+        else
+            onControllerSelected(1); // TODO fix default
 
         controllerLayout.setOutputConnection(app.getConnection());
 
@@ -91,9 +93,7 @@ public class MultiEngineControlFragment extends ArduinoLegoFragment {
 
         mainView.addView(controllerLayout);
 
-//        initSlidingUpPanel();
-
-         return mainView;
+        return mainView;
     }
 
     @Override
@@ -101,55 +101,39 @@ public class MultiEngineControlFragment extends ArduinoLegoFragment {
         super.onResume();
     }
 
-    private void initSlidingUpPanel(){
-        slidingUpPanelLayout = (SlidingUpPanelLayout) mainView.findViewById(R.id.sliding_layout);
-
-        slidingUpPanelLayout.setPanelHeight((int) (getScreenHeight()/TOP_MENU_SIZE_DIVIDER));
-        slidingUpPanelLayout.setSlidingEnabled(false);
-        slidingUpPanelLayout.setEnableDragViewTouchEvents(true);
-
-        /* Bottom Panel*/
-        slidingUpPanelLayout.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
-            @Override
-            public void onPanelSlide(View panel, float slideOffset) {
-//                Log.i(TAG, "onPanelSlide,, Container, offset " + slideOffset);
-
-                if (slideOffset == BOTTOM_MENU_OFFSET_FULL) {
-                    slidingUpPanelLayout.setSlidingEnabled(false);
-                }
-                // When closed full eliminating the listener and enabling the slide.
-                else if (slideOffset == 1.0f) {
-
-                }
-
-                bottomMenuFragment.onPanelSlide(slidingUpPanelLayout, slideOffset);
-            }
-
-            @Override
-            public void onPanelExpanded(View panel) {
-                Log.i(TAG, "onPanelExpanded, Container");
-            }
-
-            @Override
-            public void onPanelCollapsed(View panel) {
-                Log.i(TAG, "onPanelCollapsed, Container");
-            }
-
-            @Override
-            public void onPanelAnchored(View panel) {
-                Log.i(TAG, "onPanelAnchored, Container.");
-
-            }
-        });
-
-        createSlidePanelFragment();
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.v(TAG, "onDestroy");
     }
 
     @Override
     public void onControllerSelected(long id) {
         super.onControllerSelected(id);
+        Log.v(TAG, "onControllerSelected, ID: " + id);
+        if (!isAdded()){ Log.e(TAG, "Fragement not added"); return;}
+        if (app == null)
+        {
+            if (getActivity() == null)
+            {
+                Log.e(TAG, "Activity is null");
+                return;
+            }
+            app = (ArduinoCarAppObj) getActivity().getApplication();
+        }
+
+        openControllerId = id;
+
         controllerLayout.setOutputConnection(app.getConnection());
-        controllerLayout.setController(CustomDBManager.getInstance().getControllerById(id));
+
+        CustomController controller = CustomDBManager.getInstance().getControllerById(id);
+        if (controller == null)
+        {
+            Log.e(TAG, "Controller is null");
+            return;
+        }
+
+        controllerLayout.setController(controller);
     }
 
     private void createSlidePanelFragment(){
@@ -174,7 +158,16 @@ public class MultiEngineControlFragment extends ArduinoLegoFragment {
     }
 
     @Override
-    public void onConnecting() {
-        super.onConnecting();
+    public void openAddButtonOption() {
+        controllerLayout.showAddButtonView();
+    }
+
+    @Override
+    public void onEditModeChanged(boolean editing) {
+        super.onEditModeChanged(editing);
+        if (editing)
+            controllerLayout.enterEditMode();
+        else
+            controllerLayout.exitEditMode();
     }
 }

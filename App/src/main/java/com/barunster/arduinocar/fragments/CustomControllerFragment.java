@@ -414,10 +414,10 @@ public class CustomControllerFragment extends ArduinoLegoFragment implements Vie
 
     @Override
     public void onButtonChanged(CustomButton customButton, View view) {
-        int affectedRows = app.getCustomDBManager().updateButtonById(customButton);
+        app.getCustomDBManager().updateButtonById(customButton);
 
         if (DEBUG)
-            Log.d(TAG, "onButtonChanged, Affected Rows = " + affectedRows);
+            Log.d(TAG, "onButtonChanged");
     }
 
     /* Activity Listener - events that are captured in the main activity and passed to this fragment if needed.*/

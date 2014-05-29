@@ -9,4 +9,6 @@ public interface FragmentMode {
     public void onDisconnected();
     public void onFullScreen();
     public void onExitFullScreen();
+    public void openAddButtonOption();
+    public void onEditModeChanged(boolean editing);
 }

@@ -20,18 +20,16 @@ import android.os.Build;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import com.barunster.arduinocar.adapters.SimpleListAdapter;
+import com.barunster.arduinocar.custom_controllers_obj.CustomUtils;
 import com.barunster.arduinocar.fragments.ArduinoLegoFragment;
 import com.barunster.arduinocar.fragments.CustomControllerFragment;
-import com.barunster.arduinocar.fragments.not_used.MultiEngineControlFragment;
-import com.barunster.arduinocar.fragments.bottom_menu.BottomMenuFragment;
+import com.barunster.arduinocar.fragments.MultiEngineControlFragment;
 import com.barunster.arduinocar.fragments.top_menu.ConnectionInfoFragment;
 import com.barunster.arduinocar.fragments.top_menu.TopMenuFragment;
-import com.barunster.arduinocar.interfaces.SlideMenuListener;
 import com.barunster.arduinocar.views.SlidingUpPanelLayout;
 
 import java.util.ArrayList;
@@ -46,15 +44,12 @@ public class MainActivity extends FragmentActivity {
 
     private final String TAG = MainActivity.class.getSimpleName();
 
-    private static final float TOP_MENU_OFFSET = 0.9f;
-    private static final int TOP_MENU_SIZE_DIVIDER = 10;
+    private static final float TOP_MENU_OFFSET = 0.90f;
     private static final boolean DEBUG = false;
 
     public static final String BLUETOOTH_DEVICE_NAME = "bluetooth_device_name";
     public static final String MAIN_FRAGMENT_TAG = "main_fragment_tag";
     public static final String FULL_SCREEN_MODE  = "full_screen_mode";
-    public static final String CONTROLLER_ID  = "controller_id";
-
 
     // Bluetooth connection related
     private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -94,22 +89,26 @@ public class MainActivity extends FragmentActivity {
 
         getDisplaySize();
 
-        if (savedInstanceState == null) {
+        if (getFragmentManager().findFragmentByTag(MAIN_FRAGMENT_TAG)!= null)
+        {
+            Log.e(TAG, "Found Fragment");
+        }
+        else if (savedInstanceState == null) {
+            Log.i(TAG, "saved instance is null");
             createFragment(ArduinoLegoFragment.FRAGMENT_TYPE_MULTIPLE); // TODO change to custom controller fragment
         }
         else
         {
             Toast.makeText(this, "from savedInstanceBundle activity", Toast.LENGTH_SHORT).show();
 
+            controllerId = savedInstanceState.getLong(ArduinoLegoFragment.CONTROLLER_ID, -1);
+
             if (DEBUG)
-                Log.i(TAG, " activity starts from saved instance bundle.");
+                Log.i(TAG, " activity starts from saved instance bundle. controller id: "  + controllerId );
 
             createFragment(savedInstanceState.getString(ArduinoLegoFragment.FRAGMENT_TYPE));
 
             isFullScreenMode = savedInstanceState.getBoolean(FULL_SCREEN_MODE, false);
-
-            controllerId = savedInstanceState.getLong(CONTROLLER_ID, -1);
-            onControllerSelected(controllerId);
         }
 
         initSlidingUpPanel();
@@ -123,6 +122,8 @@ public class MainActivity extends FragmentActivity {
         super.onResume();
         if (DEBUG)
             Log.d(TAG, "onResume");
+
+        app.setVisible(true);
 
         // Reconnect to device
         if(ArduinoCarAppObj.prefs.getBoolean(ConnectionInfoFragment.PREFS_AUTO_CONNECT, true))
@@ -142,6 +143,8 @@ public class MainActivity extends FragmentActivity {
         super.onPause();
         if (DEBUG)
             Log.d(TAG, "onPause");
+
+        app.setVisible(false);
 
         if(ArduinoCarAppObj.prefs.getBoolean(ConnectionInfoFragment.PREFS_AUTO_DISCONNECT, true))
             app.getConnection().close();
@@ -171,7 +174,7 @@ public class MainActivity extends FragmentActivity {
 
             outState.putString(ArduinoLegoFragment.FRAGMENT_TYPE, fragment.getType());
             outState.putBoolean(FULL_SCREEN_MODE, isFullScreenMode);
-            outState.putLong(CONTROLLER_ID, controllerId);
+            outState.putLong(ArduinoLegoFragment.CONTROLLER_ID, controllerId);
         }
         else
             Toast.makeText(this, "Fragment is null when saving instance bundle", Toast.LENGTH_SHORT).show();
@@ -257,15 +260,15 @@ public class MainActivity extends FragmentActivity {
 
         slidingUpPanelLayoutMain.setEnableDragViewTouchEvents(true);
 
-        slidingUpPanelLayoutMain.setPanelHeight(MeasuredHeight / TOP_MENU_SIZE_DIVIDER);
+        slidingUpPanelLayoutMain.setPanelHeight(MeasuredHeight / ArduinoCarAppObj.TOP_MENU_SIZE_DIVIDER);
 
         /* Top Panel*/
         slidingUpPanelLayoutMain.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
             @Override
             public void onPanelSlide(View panel, float slideOffset) {
 
-                if (DEBUG)
-                    Log.i(TAG, "onPanelSlide, offset " + slideOffset);
+              /*  if (DEBUG)
+                    Log.i(TAG, "onPanelSlide, offset " + slideOffset);*/
 
                 // When menu is only slightly shown set a click listener to the frame so iw will close it when click.
                 if (slideOffset == TOP_MENU_OFFSET)
@@ -378,6 +381,7 @@ public class MainActivity extends FragmentActivity {
         extras.putString(ArduinoLegoFragment.FRAGMENT_TYPE, fragmentType);
         extras.putFloat(ArduinoLegoFragment.SCREEN_WIDTH, MeasuredWidth);
         extras.putFloat(ArduinoLegoFragment.SCREEN_HEIGHT, MeasuredHeight);
+        extras.putLong(ArduinoLegoFragment.CONTROLLER_ID, controllerId);
 
         fragment.setArguments(extras);
 
@@ -390,6 +394,12 @@ public class MainActivity extends FragmentActivity {
         ft = getSupportFragmentManager().beginTransaction();
 
         topMenuFragment = new TopMenuFragment();
+
+        Bundle extras = new Bundle();
+        extras.putFloat(ArduinoLegoFragment.SCREEN_WIDTH, MeasuredWidth);
+        extras.putFloat(ArduinoLegoFragment.SCREEN_HEIGHT, MeasuredHeight);
+
+        topMenuFragment.setArguments(extras);
 
         // Used later for refreshing to connection fragment when menu is open.
         topMenuFragment.setUserVisibleHint(false);
@@ -422,13 +432,13 @@ public class MainActivity extends FragmentActivity {
         fragment.onExitFullScreen();
 
         if (DEBUG)
-            Log.d(TAG, "Panel Height: " + MeasuredHeight / TOP_MENU_SIZE_DIVIDER);
+            Log.d(TAG, "Panel Height: " + MeasuredHeight / ArduinoCarAppObj.TOP_MENU_SIZE_DIVIDER);
 
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 isFullScreenMode = false;
-                slidingUpPanelLayoutMain.setPanelHeight(MeasuredHeight / TOP_MENU_SIZE_DIVIDER);
+                slidingUpPanelLayoutMain.setPanelHeight(MeasuredHeight / ArduinoCarAppObj.TOP_MENU_SIZE_DIVIDER);
                 slidingUpPanelLayoutMain.post(new Runnable() {
                     @Override
                     public void run() {
@@ -437,6 +447,14 @@ public class MainActivity extends FragmentActivity {
                 });
             }
         }, 700);
+    }
+
+    public void addButtonPressed(){
+        fragment.openAddButtonOption();
+    }
+
+    public void editButtonPressed(boolean selected){
+        fragment.onEditModeChanged(selected);
     }
 
     private void fadeOutTopMenu(){

@@ -1,5 +1,5 @@
 
-package com.barunster.arduinocar.fragments.not_used;
+package com.barunster.arduinocar.not_used;
 
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;

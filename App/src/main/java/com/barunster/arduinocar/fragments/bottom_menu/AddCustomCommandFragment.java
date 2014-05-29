@@ -194,9 +194,8 @@ public class AddCustomCommandFragment extends MenuFragment {
                         CustomButton customButton = app.getCustomDBManager().getButtonById(buttonId);
                         customButton.setShowMarks( ((CheckBox)mainView.findViewById(R.id.check_show_marks)).isChecked() );
                         customButton.setCenterAfterDrop( ((CheckBox) mainView.findViewById(R.id.check_auto_center)).isChecked());
-                        buttonId = app.getCustomDBManager().updateButtonById(customButton);
 
-                        if (buttonId == -1)
+                        if (!app.getCustomDBManager().updateButtonById(customButton))
                             Log.e(TAG, "Problem adding button to the database.");
 
                         // Recreate the controller TODO refresh only relevant button and not the whole layout.

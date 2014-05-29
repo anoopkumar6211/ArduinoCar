@@ -12,10 +12,13 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.PopupWindow;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,7 +34,7 @@ import java.util.List;
 /**
  * Created by itzik on 3/24/14.
  */
-public class SelectControllerFragment extends MenuFragment {
+public class SelectControllerFragment extends MenuFragment implements CompoundButton.OnCheckedChangeListener{
 
     private static final String TAG = SelectControllerFragment.class.getSimpleName();
 
@@ -47,6 +50,8 @@ public class SelectControllerFragment extends MenuFragment {
     private Button btnAddController;
     private EditText etControllerName;
     private NumberPicker pickRows, pickColumns;
+    private RadioGroup grpBrickSize;
+    private CheckBox chkControllerFill;
 
     private SimpleListAdapter adapter;
 
@@ -65,15 +70,18 @@ public class SelectControllerFragment extends MenuFragment {
 
         initControllerList();
         initAddControllerViews();
+        initAddControllerLogic();
 
         return mainView;
     }
 
     private void initAddControllerViews(){
+        chkControllerFill = (CheckBox) mainView.findViewById(R.id.chk_fill_screen);
         btnAddController = (Button) mainView.findViewById(R.id.btn_add_controller);
         etControllerName = (EditText) mainView.findViewById(R.id.edit_enter_controller_name);
         pickRows = (NumberPicker) mainView.findViewById(R.id.picker_rows);
         pickColumns = (NumberPicker) mainView.findViewById(R.id.picker_columns);
+        grpBrickSize = (RadioGroup) mainView.findViewById(R.id.grp_brick_size);
 
         // Pickers Settings.
         pickRows.setMinValue(MIN_COL_ROWS);
@@ -83,6 +91,28 @@ public class SelectControllerFragment extends MenuFragment {
         pickColumns.setMinValue(MIN_COL_ROWS);
         pickColumns.setMaxValue(MAX_COL_ROWS);
         pickColumns.setValue(pickRows.getMinValue());
+    }
+
+    private void initAddControllerLogic(){
+        chkControllerFill.setChecked(ArduinoCarAppObj.prefs.getBoolean(ArduinoCarAppObj.PREFS_CONTROLLER_FILL_SCREEN, true));
+        if (chkControllerFill.isChecked())
+        {
+            // Show Rows and Columns Pickers
+            mainView.findViewById(R.id.linear_pickers).setVisibility(View.GONE);
+
+            // Show Brick Size Selection
+            mainView.findViewById(R.id.linear_brick_size_selection).setVisibility(View.VISIBLE);
+        }
+        else
+        {
+            // Hide Brick Size Selection
+            mainView.findViewById(R.id.linear_brick_size_selection).setVisibility(View.GONE);
+
+            // Show Rows and Columns Pickers
+            mainView.findViewById(R.id.linear_pickers).setVisibility(View.VISIBLE);
+        }
+
+        chkControllerFill.setOnCheckedChangeListener(this);
 
         // Set Done Button on the keyboard for the edit text
         etControllerName.setImeOptions(EditorInfo.IME_ACTION_DONE);
@@ -91,6 +121,7 @@ public class SelectControllerFragment extends MenuFragment {
         btnAddController.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                long id = -1;
 
                 if ( ((EditText) mainView.findViewById(R.id.edit_enter_controller_name)).getText().toString().isEmpty())
                 {
@@ -98,10 +129,36 @@ public class SelectControllerFragment extends MenuFragment {
                     return;
                 }
 
-                long id = app.getCustomDBManager().addController(new CustomController(
-                        ((EditText) mainView.findViewById(R.id.edit_enter_controller_name)).getText().toString(),
-                        pickRows.getValue(), pickColumns.getValue()
-                ));
+                if (chkControllerFill.isChecked())
+                {
+                    int brickSize = 0;
+                    switch (grpBrickSize.getCheckedRadioButtonId())
+                    {
+                        case R.id.radio_size_small:
+                            brickSize = CustomController.SIZE_SMALL;
+                            break;
+
+                        case R.id.radio_size_medium:
+                            brickSize = CustomController.SIZE_MEDIUM;
+                            break;
+
+                        case R.id.radio_size_large:
+                            brickSize = CustomController.SIZE_LARGE;
+                            break;
+                    }
+
+                    id = app.getCustomDBManager().addController(new CustomController(
+                            ((EditText) mainView.findViewById(R.id.edit_enter_controller_name)).getText().toString(),
+                            brickSize
+                    ));
+                }
+                else
+                {
+                    id = app.getCustomDBManager().addController(new CustomController(
+                            ((EditText) mainView.findViewById(R.id.edit_enter_controller_name)).getText().toString(),
+                            pickRows.getValue(), pickColumns.getValue()
+                    ));
+                }
 
                 // Opens the new controller.
                 ((MainActivity)getActivity()).onControllerSelected(id);
@@ -196,5 +253,23 @@ public class SelectControllerFragment extends MenuFragment {
         super.setUserVisibleHint(isVisibleToUser);
     }
 
+    @Override
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        if (isChecked)
+        {
+            // Show Rows and Columns Pickers
+            mainView.findViewById(R.id.linear_pickers).setVisibility(View.GONE);
 
+            // Show Brick Size Selection
+            mainView.findViewById(R.id.linear_brick_size_selection).setVisibility(View.VISIBLE);
+        }
+        else
+        {
+            // Hide Brick Size Selection
+            mainView.findViewById(R.id.linear_brick_size_selection).setVisibility(View.GONE);
+
+            // Show Rows and Columns Pickers
+            mainView.findViewById(R.id.linear_pickers).setVisibility(View.VISIBLE);
+        }
+    }
 }

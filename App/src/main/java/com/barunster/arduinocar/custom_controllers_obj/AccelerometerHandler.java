@@ -190,7 +190,6 @@ public class AccelerometerHandler implements SensorEventListener {
             }
         }
 
-        //TODO stop
         if (accelerometerEventListener != null)
         {
             accelerometerEventListener.onChangeDeltas(deltas);

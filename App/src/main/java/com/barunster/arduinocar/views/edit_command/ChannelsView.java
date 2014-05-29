@@ -33,35 +33,35 @@ public class ChannelsView extends LinearLayout {
     }
 
     private void init(){
-        int count = 0;
-        for (String channel : getResources().getStringArray(R.array.motor_channels))
-        {
-            LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        if (!isInEditMode()) {
+            int count = 0;
+            for (String channel : getResources().getStringArray(R.array.motor_channels)) {
+                LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-            txtChannel = (TextView) inflater.inflate(R.layout.simple_text_view, null);
-            txtChannel.setText(channel);
-            txtChannel.setTextColor(Color.RED);
-            txtChannel.setId(count);
+                txtChannel = (TextView) inflater.inflate(R.layout.simple_text_view, null);
+                txtChannel.setText(channel);
+                txtChannel.setTextColor(Color.RED);
+                txtChannel.setId(count);
 
-            txtChannel.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
+                txtChannel.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
 
-                    if (v.getId() != channelNumber)
-                    {
-                        setSelectedChannel(v.getId(), channelNumber);
+                        if (v.getId() != channelNumber) {
+                            setSelectedChannel(v.getId(), channelNumber);
+                        }
                     }
-                }
-            });
+                });
 
-            // Add the view
-            addView(txtChannel);
+                // Add the view
+                addView(txtChannel);
 
-            count++;
+                count++;
+            }
+
+            // Set default to the first channel.
+            setSelectedChannel(0,-1);
         }
-
-        // Set default to the first channel.
-        setSelectedChannel(0,-1);
     }
 
     private void setSelectedChannel(int newNumber, int oldNumber){

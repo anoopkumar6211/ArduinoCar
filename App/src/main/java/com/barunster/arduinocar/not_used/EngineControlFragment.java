@@ -1,4 +1,4 @@
-package com.barunster.arduinocar.fragments.not_used;
+package com.barunster.arduinocar.not_used;
 
 import android.graphics.Color;
 import android.os.Bundle;

@@ -19,7 +19,7 @@ import java.text.DecimalFormat;
 /**
  * Created by itzik on 3/11/14.
  */
-public class SlideButton extends Button {
+class SlideButton extends Button {
 
     private static final String TAG = SlideButton.class.getSimpleName();
     private static final boolean DEBUG = false;

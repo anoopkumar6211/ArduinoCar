@@ -22,10 +22,16 @@
         android:name=".ArduinoCarAppObj"
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
+
+        <!--' android:windowSoftInputMode="stateHidden|adjustResize" ' - Cancel the keyboard to show when app starts.-->
+        <!--' android:configChanges="orientation|keyboardHidden|screenSize" ' - Stop the system from killing the app when screen is locked/sleeps because of orientation change.-->
         <activity
             android:name="com.barunster.arduinocar.MainActivity"
             android:label="@string/app_name"
-            android:screenOrientation="landscape">
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:windowSoftInputMode="stateHidden|adjustResize"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

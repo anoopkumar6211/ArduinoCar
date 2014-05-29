@@ -25,7 +25,15 @@
         <item>@color/brick_background_5</item>
         <item>@color/brick_background_6</item>
         <item>@color/brick_background_7</item>
-
     </array>
+
+
+    <!-- Brick Size-->
+
+    <string-array name="brick_size" >
+        <item>@integer/size_small</item>
+        <item>@integer/size_medium</item>
+        <item>@integer/size_large</item>
+    </string-array>
 
 </resources>
